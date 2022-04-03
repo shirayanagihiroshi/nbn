@@ -107,12 +107,32 @@ nbn.model = (function () {
     }
   }
 
+  upload = function(file, filename, dockind, gakunen){
+    let fileReader  = new FileReader(),
+      send_file     = file,
+      send_filename = filename,
+      data          = {};
+
+    fileReader.readAsArrayBuffer(send_file);
+
+    fileReader.onload = function(event) {
+      data.file = event.target.result;
+      data.name = send_filename;
+
+      // ディレクトリが用意されていないと、ファイルが生成されない。
+      nbn.data.sendToServer('upload',{AKey    : accessKey,
+                                      data    : data,
+                                      dockind : dockind,
+                                      gakunen : gakunen});
+    }
+  }
 
   return { initModule      : initModule,
           login            : login,
           logout           : logout,
           islogind         : islogind,
           getAKey          : getAKey,
-          iskyouin         : iskyouin
+          iskyouin         : iskyouin,
+          upload           : upload
         };
 }());

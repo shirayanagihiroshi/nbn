@@ -32,7 +32,7 @@ nbn.uploadDocument = (function () {
       },
       jqueryMap = {},
       setJqueryMap, configModule, initModule, removeUploadDocument,
-      upload, onUpload;
+      onUpload;
 
   //---DOMメソッド---
   setJqueryMap = function () {
@@ -53,27 +53,14 @@ nbn.uploadDocument = (function () {
   onUpload = function () {
     //console.log(jqueryMap.$docKindFile.prop('files')[0].name);
 
-    upload(stateMap.upfile);
+    nbn.model.upload(stateMap.upfile,
+                     jqueryMap.$docKindFile.prop('files')[0].name,
+                     1,
+                     1);
     return false;
   }
 
   //---ユーティリティメソッド---
-  upload = function(file){
-    let fileReader = new FileReader(),
-      send_file = file,
-      data = {};
-
-    fileReader.readAsArrayBuffer(send_file);
-
-    fileReader.onload = function(event) {
-      data.file = event.target.result;
-      data.name = jqueryMap.$docKindFile.prop('files')[0].name;
-
-      // modelを経ずに通信してる
-      // また、ディレクトリが用意されていないと、ファイルが生成されない。
-      nbn.data.sendToServer('upload',data);
-    }
-  }
 
   //---パブリックメソッド---
   configModule = function ( input_map ) {

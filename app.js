@@ -412,14 +412,34 @@ io.on("connection", function (socket) {
     });
   });
 
-  socket.on('upload', function(data) {
+  socket.on('upload', function(msg) {
     let fs = require('fs');
 
     // ディレクトリが用意されていないとファイルは生成されない
     // console.log(__dirname + '/public/image/' + data.name);
 
-    fs.writeFile(__dirname + '/public/image/' + data.name, data.file, function (err) {
-      console.log('write end');
+    // アクセスキーの確認のために'user'にアクセスしている
+    db.findManyDocuments('user', {userId:msg.AKey.userId}, {projection:{_id:0}}, function (result) {
+      // ログイン中のユーザにのみ回答
+      if (result.length != 0 && msg.AKey.token == result[0].token ) {
+        fs.writeFile(__dirname + '/public/image/' + msg.data.name, msg.data.file, function (err) {
+          let today = new Date();
+          db.insertDocument('documents',
+                            {year     : today.getFullYear(),
+                             month    : today.getMonth() + 1,//月だけ0始まり
+                             day      : today.getDate(),
+                             gakunen  : msg.gakunen,
+                             dockind  : msg.dockind,
+                             filename : msg.data.name},
+                            function (res) {
+
+            io.to(socket.id).emit('uploadResult', res); // 送信者のみに送信
+          });
+          console.log('write end');
+        });
+      } else {
+        io.to(socket.id).emit('anotherLogin', {}); // 送信者のみに送信
+      }
     });
   });
 
