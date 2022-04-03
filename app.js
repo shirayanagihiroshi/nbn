@@ -412,6 +412,16 @@ io.on("connection", function (socket) {
     });
   });
 
+  socket.on('upload', function(data) {
+    let fs = require('fs');
+
+    // ディレクトリが用意されていないとファイルは生成されない
+    // console.log(__dirname + '/public/image/' + data.name);
+
+    fs.writeFile(__dirname + '/public/image/' + data.name, data.file, function (err) {
+      console.log('write end');
+    });
+  });
 
   // 切断
   socket.on("disconnect", () => {

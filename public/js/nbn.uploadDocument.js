@@ -21,16 +21,18 @@ nbn.uploadDocument = (function () {
             + '<option value="3">中学3年</option>'
           + '</select>'
           + '<form action="/" method="POST" enctype="multipart/form-data">'
-          + '<input type="file" id="fileInput">'
-          + '<button class="nbn-uploadDocument-upload">アップロード</button>'
-          + '</form>',
+          + '<input class="nbn-uploadDocument-file" type="file" id="fileInput">'
+          + '</form>'
+          + '<button class="nbn-uploadDocument-upload">アップロード</button>',
         settable_map : {}
       },
       stateMap = {
-        $container : null
+        $container : null,
+        upfile : null
       },
       jqueryMap = {},
-      setJqueryMap, configModule, initModule, removeUploadDocument;
+      setJqueryMap, configModule, initModule, removeUploadDocument,
+      upload, onUpload;
 
   //---DOMメソッド---
   setJqueryMap = function () {
@@ -42,13 +44,36 @@ nbn.uploadDocument = (function () {
       $gakunenList  : $container.find( '.nbn-uploadDocument-gakunen-list' ),
       $docKindTitle : $container.find( '.nbn-uploadDocument-docKind-title' ),
       $docKindList  : $container.find( '.nbn-uploadDocument-docKind-list' ),
+      $docKindFile  : $container.find( '.nbn-uploadDocument-file' ),
       $uploadButton : $container.find( '.nbn-uploadDocument-upload' )
     };
   }
 
   //---イベントハンドラ---
+  onUpload = function () {
+    //console.log(jqueryMap.$docKindFile.prop('files')[0].name);
+
+    upload(stateMap.upfile);
+    return false;
+  }
 
   //---ユーティリティメソッド---
+  upload = function(file){
+    let fileReader = new FileReader(),
+      send_file = file,
+      data = {};
+
+    fileReader.readAsArrayBuffer(send_file);
+
+    fileReader.onload = function(event) {
+      data.file = event.target.result;
+      data.name = jqueryMap.$docKindFile.prop('files')[0].name;
+
+      // modelを経ずに通信してる
+      // また、ディレクトリが用意されていないと、ファイルが生成されない。
+      nbn.data.sendToServer('upload',data);
+    }
+  }
 
   //---パブリックメソッド---
   configModule = function ( input_map ) {
@@ -65,6 +90,14 @@ nbn.uploadDocument = (function () {
     stateMap.$container = $container;
     setJqueryMap();
 
+    jqueryMap.$uploadButton
+      .click( onUpload );
+
+    // ファイルが選択された時に保持しておく
+    jqueryMap.$docKindFile.change(function(event){
+      stateMap.upfile = event.target.files[0];
+    });
+
     return true;
   }
 
@@ -75,6 +108,7 @@ nbn.uploadDocument = (function () {
         jqueryMap.$notice.remove();
         jqueryMap.$gakunenTitle.remove();
         jqueryMap.$gakunenList.remove();
+        jqueryMap.$docKindFile.remove();
         jqueryMap.$uploadButton.remove();
       }
     }

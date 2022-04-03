@@ -7,7 +7,7 @@ nbn.model = (function () {
   'use strict';
 
   var initModule, login, logout, islogind, getAKey,
-      initLocal, iskyouin, //関数
+      initLocal, iskyouin, upload, //関数
       accessKey, userKind, name, documents;//モジュールスコープ変数
 
   initLocal = function () {
@@ -106,6 +106,7 @@ nbn.model = (function () {
       return false;
     }
   }
+
 
   return { initModule      : initModule,
           login            : login,
