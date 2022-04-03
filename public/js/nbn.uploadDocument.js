@@ -12,6 +12,8 @@ nbn.uploadDocument = (function () {
           + '<div class="nbn-uploadDocument-gakunen-title">'
             + '対象学年'
           + '</div>'
+          + '<div class="nbn-uploadDocument-docKind-title"></div>'
+          + '<select class="nbn-uploadDocument-docKind-list"></select>'
           + '<select class="nbn-uploadDocument-gakunen-list">'
             + '<option value="10">中学全体</option>'
             + '<option value="1">中学1年</option>'
@@ -20,7 +22,6 @@ nbn.uploadDocument = (function () {
           + '</select>'
           + '<form action="/" method="POST" enctype="multipart/form-data">'
           + '<input type="file" id="fileInput">'
-          + '<input type="text">'
           + '<button class="nbn-uploadDocument-upload">アップロード</button>'
           + '</form>',
         settable_map : {}
@@ -39,6 +40,8 @@ nbn.uploadDocument = (function () {
       $notice       : $container.find( '.nbn-documentsList-notice' ),
       $gakunenTitle : $container.find( '.nbn-uploadDocument-gakunen-title' ),
       $gakunenList  : $container.find( '.nbn-uploadDocument-gakunen-list' ),
+      $docKindTitle : $container.find( '.nbn-uploadDocument-docKind-title' ),
+      $docKindList  : $container.find( '.nbn-uploadDocument-docKind-list' ),
       $uploadButton : $container.find( '.nbn-uploadDocument-upload' )
     };
   }

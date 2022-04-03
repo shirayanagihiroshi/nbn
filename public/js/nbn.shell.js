@@ -11,6 +11,7 @@ nbn.shell = (function () {
       status : {dialog          : true,
                 documentsList   : true,
                 uploadDocument  : true, //従属変数なし
+                addDocumentKind : true, //従属変数なし
                 matiuke         : true  //従属変数なし
               },
       _status : {
@@ -150,9 +151,22 @@ nbn.shell = (function () {
 
       nbn.documentsList.configModule({});
       nbn.documentsList.initModule( jqueryMap.$main );
-// 仮
-//      nbn.uploadDocument.configModule({});
-//      nbn.uploadDocument.initModule( jqueryMap.$main );
+
+    // 登録画面の場合
+    } else if ( anchor_map.status == 'uploadDocument' ) {
+      setModal(false);
+      clearMainContent();
+
+      nbn.uploadDocument.configModule({});
+      nbn.uploadDocument.initModule( jqueryMap.$main );
+
+    // ドキュメント種別追加の場合
+    } else if ( anchor_map.status == 'addDocumentKind' ) {
+      setModal(false);
+      clearMainContent();
+
+      nbn.addDocKind.configModule({});
+      nbn.addDocKind.initModule( jqueryMap.$main );
 
     // 待ち受け画面の場合
     } else if ( anchor_map.status == 'matiuke' ) {
@@ -263,8 +277,6 @@ nbn.shell = (function () {
       schema_map : configMap.anchor_schema_map
     });
 
-    jqueryMap.$menu.html( configMap.menuStr );
-
     // 以降、各種イベント処理の登録
     // ログインダイアログ表示
     $.gevent.subscribe( $container, 'tryLogin', function (event, msg_map) {
@@ -336,7 +348,7 @@ nbn.shell = (function () {
     });
 
     // 検索メニュー表示
-    $.gevent.subscribe( $container, 'documentSelect', function (event, msg_map) {
+    $.gevent.subscribe( $container, 'selectDocument', function (event, msg_map) {
       changeAnchorPart({
         status : 'dialog',
         _status : {
@@ -345,6 +357,21 @@ nbn.shell = (function () {
       });
     });
 
+    // 登録画面表示
+    $.gevent.subscribe( $container, 'uploadDocument', function (event, msg_map) {
+      changeAnchorPart({
+        status : 'uploadDocument'
+      });
+    });
+
+    // ドキュメント種別追加
+    $.gevent.subscribe( $container, 'addDocumentKind', function (event, msg_map) {
+      changeAnchorPart({
+        status : 'addDocumentKind'
+      });
+    });
+
+    jqueryMap.$menu.html( configMap.menuStr );
 
     nbn.acct.configModule({showStr : 'ログインする'});
     nbn.acct.initModule( jqueryMap.$acct );

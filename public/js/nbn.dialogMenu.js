@@ -19,6 +19,7 @@ nbn.dialogMenu = (function () {
             + '<ul>'
               + '<li class="nbn-dialogMenu-find">ドキュメント検索</li>'
               + '<li class="nbn-dialogMenu-upload">ドキュメント登録</li>'
+              + '<li class="nbn-dialogMenu-addkind">ドキュメント種別追加</li>'
             + '</ul>'
           + '</div>'
         + '<div>',
@@ -29,7 +30,7 @@ nbn.dialogMenu = (function () {
       },
       jqueryMap = {},
       setJqueryMap, configModule, initModule, removeDialog,
-      onClose, onFind, onUpload;
+      onClose, onFind, onUpload, onAddkind;
 
   //---DOMメソッド---
   setJqueryMap = function () {
@@ -40,7 +41,8 @@ nbn.dialogMenu = (function () {
       $closer          : $dialog.find( '.nbn-dialogMenu-head-closer' ),
       $main            : $dialog.find( '.nbn-dialogMenu-main' ),
       $find            : $dialog.find( '.nbn-dialogMenu-find' ),
-      $upload          : $dialog.find( '.nbn-dialogMenu-upload' )
+      $upload          : $dialog.find( '.nbn-dialogMenu-upload' ),
+      $addkind         : $dialog.find( '.nbn-dialogMenu-addkind' )
     };
   }
 
@@ -51,12 +53,17 @@ nbn.dialogMenu = (function () {
   }
 
   onFind = function() {
-    $.gevent.publish('documentSelect', [{}]);
+    $.gevent.publish('selectDocument', [{}]);
     return false;
   }
 
   onUpload = function() {
-    $.gevent.publish('documentUpload', [{}]);
+    $.gevent.publish('uploadDocument', [{}]);
+    return false;
+  }
+
+  onAddkind = function() {
+    $.gevent.publish('addDocumentKind', [{}]);
     return false;
   }
 
@@ -96,6 +103,8 @@ nbn.dialogMenu = (function () {
       .click( onFind );
     jqueryMap.$upload
       .click( onUpload );
+    jqueryMap.$addkind
+      .click( onAddkind );
 
     return true;
   }
