@@ -1,0 +1,97 @@
+/*
+ * nbn.dialogSelect.css
+ * ダイアログスタイル
+ */
+
+ .nbn-dialogSelect,
+ .nbn-dialogSelect-head,
+ .nbn-dialogSelect-head-closer,
+ .nbn-dialogSelect-main,
+ .nbn-dialogSelect-main-docKind,
+ .nbn-dialogSelect-main-docKind-list,
+ .nbn-dialogSelect-main-period,
+ .nbn-dialogSelect-main-period2,
+ .nbn-dialogSelect-main-start-month,
+ .nbn-dialogSelect-main-end-month,
+ .nbn-dialogSelect-main-ok
+ {
+   position: absolute;
+ }
+
+.nbn-dialogSelect {
+  margin-top : -200px;
+  margin-left : -200px;
+  top : 50%;
+  left : 50%;
+  width : 400px;
+  height : 400px;
+  border-radius : 3px;
+  z-index : 2;
+  background : #85B0FF;
+  position:fixed;
+}
+
+.nbn-dialogSelect-head {
+  top    : 0;
+  left   : 0;
+  right  : 0;
+  height : 40px;
+}
+
+.nbn-dialogSelect-head-closer {
+  top    : 4px;
+  right  : 4px;
+  width  : 32px;
+  height : 32px;
+  text-align: center;
+  cursor: pointer;
+  border-radius: 8px;
+  background : #705AA3;
+}
+
+.nbn-dialogSelect-main {
+   top    : 40px;
+   left   : 20px;
+   right  : 0;
+   bottom : 0;
+ }
+
+ .nbn-dialogSelect-main-docKind {
+   top    : 10px;
+   left   : 20px;
+   font-size: 25px;
+ }
+
+ .nbn-dialogSelect-main-docKind-list {
+   top    : 30px;
+   left   : 20px;
+ }
+
+ .nbn-dialogSelect-main-period {
+   top    : 50px;
+   left   : 20px;
+   font-size: 25px;
+ }
+
+ .nbn-dialogSelect-main-period2 {
+   top    : 70px;
+   left   : 20px;
+   font-size: 25px;
+ }
+ .nbn-dialogSelect-main-start-month {
+   top    : 90px;
+   left   : 20px;
+   font-size: 25px;
+ }
+
+ .nbn-dialogSelect-main-end-month {
+   top    : 110px;
+   left   : 20px;
+   font-size: 25px;
+ }
+
+ .nbn-dialogSelect-main-ok {
+   top    : 130px;
+   left   : 20px;
+   font-size: 25px;
+ }

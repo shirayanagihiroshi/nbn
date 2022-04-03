@@ -1,0 +1,134 @@
+/*
+ * nbn.shell.css
+ * シェルスタイル
+ */
+.nbn-shell-head, .nbn-shell-head-title, .nbn-shell-head-acct,
+.nbn-shell-main, .nbn-shell-main-menu, .nbn-shell-main-content, .nbn-shell-dialog
+{
+  position: absolute;
+}
+
+.nbn-toggle-base, .nbn-toggle-circle {
+  position: relative;
+}
+
+.nbn-shell-head {
+  top    : 0;
+  left   : 0;
+  right  : 0;
+  height : 40px;
+  background: #B5F5B3;
+
+}
+
+.nbn-shell-head-title {
+  top    : 5px;
+  left   : 20px;
+  color  : #777777;
+  font-size: 20px;
+}
+
+.nbn-shell-head-acct {
+  top    : 4px;
+  right  : 30px;
+  width  : 120px;
+  height : 32px;
+  cursor: pointer;
+  background : green;
+  /*
+  border-radius: 8px 8px 8px 8px;
+  text-align: center;
+  */
+  }
+.nbn-shell-head-acct:hover {
+  background-color: #E63C41;
+}
+
+
+
+
+.nbn-shell-main {
+  top    : 40px;
+  left   : 0;
+  bottom : 0;
+  right  : 0;
+}
+
+.nbn-shell-main-menu {
+  top    : 0;
+  left   : 0;
+  width  : 170px;
+  bottom : 0;
+  background : #f0f8ff;
+}
+
+.nbn-menu1,.nbn-menu2,.nbn-menu3,
+.nbn-menu4,.nbn-menu5,.nbn-menu6 {
+  margin: 20px;
+  cursor: pointer;
+}
+
+
+
+.nbn-shell-main-content {
+  top    : 0;
+  left   : 170px;
+  bottom : 0;
+  right  : 0;
+  background : #BEEBD9;
+}
+
+/* テーブル見出し固定したい */
+.nbn-talbe-header{
+  background : #DFC0E0;
+  position: sticky;
+  top: 0;
+}
+
+/* トグルスイッチの見ためと挙動 */
+
+input[type='checkbox'] {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+/*
+input ~ .skt-toggle-base {
+  background-color: #ddd;
+  transition: 0.3s;
+}
+
+input:checked ~ .skt-toggle-base {
+  background-color: rgb(219, 234, 254);
+  transition: 0.3s;
+}
+
+input ~ .skt-toggle-circle {
+  transform: translateX(0%);
+  background-color: gray;
+  transition: 0.3s;
+}
+
+input:checked ~ .skt-toggle-circle {
+  transform: translateX(100%);
+  background-color: blue;
+  transition: 0.3s;
+}
+*/
+.nbn-toggle-base {
+  width: 48px;
+  border-radius: 14px;
+  height: 28px;
+  background-color: #ddd;
+}
+
+.nbn-toggle-circle {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  background-color: gray;
+}
