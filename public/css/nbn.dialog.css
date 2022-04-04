@@ -12,6 +12,25 @@
    position: absolute;
  }
 
+@media screen and (max-width:768px) {
+  .nbn-dialog{
+    /*width: auto;
+    left:auto;*/
+    max-width: 100%;
+    border: 10px groove  tomato;
+  }
+
+  .nbn-dialog-main-button-ok{
+    left: auto;
+  }
+  .nbn-dialog-main-button-cancel{
+    left: auto;
+  }
+
+}
+
+
+
 .nbn-dialog {
   margin-top : -200px;
   margin-left : -200px;

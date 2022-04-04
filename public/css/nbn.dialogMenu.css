@@ -24,6 +24,17 @@
   position:fixed;
 }
 
+
+@media screen and (max-width:768px) {
+  .nbn-dialogMenu{
+
+    border: 10px groove  tomato;
+  }
+}
+
+
+
+
 .nbn-dialogMenu-head {
   top    : 0;
   left   : 0;

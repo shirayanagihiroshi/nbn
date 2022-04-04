@@ -18,6 +18,16 @@
    position: absolute;
  }
 
+
+ @media screen and (max-width:768px) {
+   .nbn-dialogSelect{
+     width: auto;
+     max-width: 100%;
+     /*margin: 50px;*/
+     border: 10px groove  tomato;
+   }
+
+ }
 .nbn-dialogSelect {
   margin-top : -200px;
   margin-left : -200px;
