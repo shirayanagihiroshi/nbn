@@ -2,13 +2,11 @@
  * nbn.js
  * ルート名前空間モジュール
  */
-var nbn = (function () {
-  'use strict';
 
-  var initModule = function ( $container ) {
-    nbn.model.initModule();
-    nbn.shell.initModule($container);
-  }
+import { createTable, foo } from './tableModule.js';
 
-  return { initModule : initModule };
-}());
+window.onload = function () {
+  const host = document.querySelector('#nbn');
+  const shadow = host.attachShadow({ mode : 'open'});
+  shadow.appendChild(createTable())
+}
