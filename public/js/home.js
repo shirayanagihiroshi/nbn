@@ -1,6 +1,6 @@
 /*
  * home.js
- * 
+ * dummy
  */
 
 class HomeView extends HTMLElement {

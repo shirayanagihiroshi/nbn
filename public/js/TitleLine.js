@@ -15,15 +15,14 @@ class TitleLine extends HTMLElement {
           top      : 10px;
           background-color : red;
         }
-        button {
-          margin-right: 10px;
-          padding: 8px 15px;
-          cursor: pointer;
+        a {
+          position : absolute;
+          right    : 30px;
+          top      : 10px;
         }
       </style>
       <div>成績処理</div>
-      <button id="homeButton">ホーム</button>
-      <button id="settingsButton">設定</button>
+      <a href="/mainmenu">メニュー</a>
     `;
     console.log("TitleLine constructor");
   }
@@ -31,7 +30,7 @@ class TitleLine extends HTMLElement {
   // カスタム要素がページに追加されたときに呼ばれるコールバック
   connectedCallback() {
     console.log("TitleLine connectedCallback");
-
+/*
     // ボタン要素を取得
     const homeButton = this.shadowRoot.querySelector('#homeButton');
     const settingsButton = this.shadowRoot.querySelector('#settingsButton');
@@ -45,8 +44,10 @@ class TitleLine extends HTMLElement {
     settingsButton.addEventListener('click', () => {
       this.dispatchChangeViewRequest('settings');
     });
+    */
   }
 
+  /*
   // 画面切り替えリクエストのカスタムイベントを発行するヘルパーメソッド
   dispatchChangeViewRequest(viewName) {
     // CustomEventを作成
@@ -61,6 +62,7 @@ class TitleLine extends HTMLElement {
     // イベントを発行
     this.dispatchEvent(event);
   }
+  */
 }
 
 customElements.define('title-line', TitleLine);

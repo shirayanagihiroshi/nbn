@@ -1,6 +1,6 @@
 /*
  * settings.js
- * 
+ * dummy
  */
 
 class SettingsView extends HTMLElement {

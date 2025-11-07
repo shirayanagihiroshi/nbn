@@ -6,6 +6,8 @@
 /*import { createTable, foo } from './tableModule.js';*/
 import './TitleLine.js';
 import './MainContainer.js';
+import './MainMenu.js';
+import './ConfirmDialog.js';
 
 class NBNShell extends HTMLElement {
   constructor() {
@@ -19,7 +21,7 @@ class NBNShell extends HTMLElement {
           top      : 0;
           width    : 100%;
           height   : 50px;
-          background-color : blue;
+          background-color : rgb(255,200,200);
         }
         main-container {
           position : absolute;
@@ -32,6 +34,8 @@ class NBNShell extends HTMLElement {
       </style>
       <title-line></title-line>
       <main-container></main-container>
+      <main-menu></main-menu>
+      <confirm-dialog></confirm-dialog>
     `;
     console.log("NBNShell constructor");
   }
@@ -43,7 +47,7 @@ class NBNShell extends HTMLElement {
 
     // titleLineのボタンがクリックされたら、mainContainerの表示を切り替える
     // (titleLine側でイベントを発行し、ここで補足する必要があります)
-    titleLine.addEventListener('change-view-request', function (event) {
+    mainContainer.addEventListener('change-view-request', function (event) {
       const viewName = event.detail.view; // イベント経由でビュー名を受け取る
       mainContainer.changeView(viewName);
     });

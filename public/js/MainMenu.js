@@ -9,21 +9,31 @@ class MainMenu extends HTMLElement {
     this.attachShadow({ mode: 'open' });
     this.shadowRoot.innerHTML = `
       <style>
-        div {
-          position : absolute;
-          left     : 30px;
-          top      : 10px;
-          background-color : red;
+        :host {
+          position: fixed;
+          top: 0; left: 0; width: 100%; height: 100%;
+          background-color: rgba(0,0,0,0.5);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          display : none;
         }
+        .dialog { background: white; padding: 20px; border-radius: 5px; min-width: 300px;}
         button {
           position : absolute;
           left     : 200px;
           top      : 10px;
         }
       </style>
-      <div>成績処理</div><button>aa</button>
+      <div class="dialog">
+        <ul>
+          <li>home</li>
+          <li>setting</li>
+          <li>メニューを閉じる</li>
+        </ul>
+      </div>
     `;
-    console.log("TitleLine constructor");
+    console.log("MainMenu constructor");
   }
 
   // カスタム要素がページに追加されたときに呼ばれるコールバック
