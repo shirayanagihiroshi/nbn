@@ -40,19 +40,51 @@ class NBNShell extends HTMLElement {
     console.log("NBNShell constructor");
   }
 
-  // カスタム要素がページに追加されたときに呼ばれるコールバック
   connectedCallback() {
-    const titleLine = this.shadowRoot.querySelector('title-line');
-    const mainContainer = this.shadowRoot.querySelector('main-container');
+    const mainmenu = this.shadowRoot.querySelector('main-menu');
 
-    // titleLineのボタンがクリックされたら、mainContainerの表示を切り替える
-    // (titleLine側でイベントを発行し、ここで補足する必要があります)
-    mainContainer.addEventListener('change-view-request', function (event) {
-      const viewName = event.detail.view; // イベント経由でビュー名を受け取る
-      mainContainer.changeView(viewName);
+    // アプリケーションのどこかから 'mainmenu' イベントが発行されたらダイアログを表示
+    document.addEventListener('mainmenu', (event) => {
+      mainmenu.show(event.detail);
     });
 
+    // リンクを辿る操作をアプリケーションがカスタマイズする処理
+    this.shadowRoot.addEventListener('click', (event) => {
+      // クリックされたのが <a> タグで、同じオリジン内のリンクか確認
+      // event.target の代わりに event.composedPath()[0] を使う
+      // event.composedPath() メソッドはイベントが伝播してきた経路（DOMノードの配列）
+      // を返す。この配列の最初の要素が実際にイベントを発生させた要素
+      const target = event.composedPath()[0];
+
+      if (target.tagName === 'A' && target.href.startsWith(location.origin)) {
+        event.preventDefault();
+        const path = new URL(target.href).pathname;
+
+        // URLが現在のパスと同じでなければ、履歴を追加して画面を更新
+        if (path !== location.pathname) {
+          history.pushState({ path }, '', path);
+          this.handleNavigation(path);
+        }
+      }
+    });
+
+    // ブラウザの「戻る/進む」ボタンが押されたときの処理
+    window.addEventListener('popstate', (event) => {
+      this.handleNavigation(location.pathname);
+    });
+
+    // 初期表示時の処理
+    this.handleNavigation(location.pathname);
+
     console.log("NBNShell connectedCallback");
+  }
+
+  // URLのパスに応じて画面を切り替えるハンドラ
+  handleNavigation(path) {
+    const mainContainer = this.shadowRoot.querySelector('main-container');
+    const viewName = path.substring(1) || 'home';
+    console.log(`Navigating to: ${viewName}`);
+    mainContainer.changeView(viewName);
   }
 }
 

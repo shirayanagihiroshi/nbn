@@ -3,6 +3,8 @@
  *
  */
 
+import { NBNDispatchEvent } from './NBNHelpers.js';
+
 class TitleLine extends HTMLElement {
   constructor() {
     super();
@@ -15,14 +17,14 @@ class TitleLine extends HTMLElement {
           top      : 10px;
           background-color : red;
         }
-        a {
+        button {
           position : absolute;
           right    : 30px;
           top      : 10px;
         }
       </style>
       <div>成績処理</div>
-      <a href="/mainmenu">メニュー</a>
+      <button id="toMenu">メニュー</button>
     `;
     console.log("TitleLine constructor");
   }
@@ -30,39 +32,14 @@ class TitleLine extends HTMLElement {
   // カスタム要素がページに追加されたときに呼ばれるコールバック
   connectedCallback() {
     console.log("TitleLine connectedCallback");
-/*
     // ボタン要素を取得
-    const homeButton = this.shadowRoot.querySelector('#homeButton');
-    const settingsButton = this.shadowRoot.querySelector('#settingsButton');
+    const menuButton = this.shadowRoot.querySelector('#toMenu');
 
-    // ホームボタンがクリックされたときの処理
-    homeButton.addEventListener('click', () => {
-      this.dispatchChangeViewRequest('home');
+    // メニューボタンがクリックされたときの処理
+    menuButton.addEventListener('click', () => {
+      NBNDispatchEvent('mainmenu',{});
     });
-
-    // 設定ボタンがクリックされたときの処理
-    settingsButton.addEventListener('click', () => {
-      this.dispatchChangeViewRequest('settings');
-    });
-    */
   }
-
-  /*
-  // 画面切り替えリクエストのカスタムイベントを発行するヘルパーメソッド
-  dispatchChangeViewRequest(viewName) {
-    // CustomEventを作成
-    // detailプロパティで、イベントに付随するデータを渡す
-    // bubbles: true でイベントがDOMツリーをバブリング（親要素へ伝播）するようにする
-    // composed: true でShadow DOMの境界を越えてイベントが伝播するようにする
-    const event = new CustomEvent('change-view-request', {
-      bubbles: true,
-      composed: true,
-      detail: { view: viewName }
-    });
-    // イベントを発行
-    this.dispatchEvent(event);
-  }
-  */
 }
 
 customElements.define('title-line', TitleLine);

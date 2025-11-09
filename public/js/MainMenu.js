@@ -27,8 +27,8 @@ class MainMenu extends HTMLElement {
       </style>
       <div class="dialog">
         <ul>
-          <li>home</li>
-          <li>setting</li>
+          <li><a href="/home">home</a></li>
+          <li><a href="/settings">setting</a></li>
           <li>メニューを閉じる</li>
         </ul>
       </div>
@@ -39,6 +39,11 @@ class MainMenu extends HTMLElement {
   // カスタム要素がページに追加されたときに呼ばれるコールバック
   connectedCallback() {
     console.log("TitleLine connectedCallback");
+  }
+
+  // ダイアログを表示するためのメソッドを拡張
+  show(config) {
+    this.style.display = 'flex';
   }
 }
 
