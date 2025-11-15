@@ -29,7 +29,7 @@ class MainMenu extends HTMLElement {
         <ul>
           <li><a href="/home">home</a></li>
           <li><a href="/settings">setting</a></li>
-          <li>メニューを閉じる</li>
+          <li><a href="/closemenu">メニューを閉じる</a></li>
         </ul>
       </div>
     `;
@@ -41,9 +41,14 @@ class MainMenu extends HTMLElement {
     console.log("TitleLine connectedCallback");
   }
 
-  // ダイアログを表示するためのメソッドを拡張
+  // ダイアログを表示するためのメソッド
   show(config) {
     this.style.display = 'flex';
+  }
+
+  // ダイアログを非表示にするためのメソッド
+  hide(config) {
+    this.style.display = 'none';
   }
 }
 

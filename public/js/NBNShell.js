@@ -40,11 +40,31 @@ class NBNShell extends HTMLElement {
     console.log("NBNShell constructor");
   }
 
+  // アプリケーションの状態遷移
+  // path        :
+  // howToChange : 'push'    履歴スタックに追加する
+  //             : 'replace' 履歴スタックの一番上を交換する
+  changeState(path, howToChange){
+    // 画面の変更
+    
+
+
+    // 履歴の操作
+    if (howToChange == 'push') {
+       history.pushState({ nbnstate : path }, '', path);
+    } else {
+     history.replaceState({ nbnstate : path }, '', path);
+    }
+  }
+
+
+  // 要素が文書に追加されるたびに呼び出される
   connectedCallback() {
     const mainmenu = this.shadowRoot.querySelector('main-menu');
 
     // アプリケーションのどこかから 'mainmenu' イベントが発行されたらダイアログを表示
     document.addEventListener('mainmenu', (event) => {
+      history.pushState({ nbnstate : 'mainmenu' }, '', '/mainmenu');
       mainmenu.show(event.detail);
     });
 
@@ -56,13 +76,23 @@ class NBNShell extends HTMLElement {
       // を返す。この配列の最初の要素が実際にイベントを発生させた要素
       const target = event.composedPath()[0];
 
+      // location.origin は現在表示されているWebページのURLから、
+      // スキーム（プロトコル）、ホスト名、ポート番号を組み合わせた文字列を返します。
+      // 例えば、現在のページのURLが https://www.example.com:8080/path/to/page?query=value#hash の場合、
+      // location.origin は https://www.example.com:8080 を返します。
+      // パス (/path/to/page)、クエリパラメータ (?query=value)、ハッシュ (#hash) は含まれません。
       if (target.tagName === 'A' && target.href.startsWith(location.origin)) {
         event.preventDefault();
-        const path = new URL(target.href).pathname;
+        const path = new URL(target.href).pathname; // リンクのpathだけを取り出す
 
         // URLが現在のパスと同じでなければ、履歴を追加して画面を更新
         if (path !== location.pathname) {
-          history.pushState({ path }, '', path);
+          if (path == '/closemenu') {
+            history.back();
+          }
+// pushするかreplaceStateするか　イベントで通知すればいいんじゃないか
+mainmenu.hide();
+          history.pushState({ nbnstate : path }, '', path);
           this.handleNavigation(path);
         }
       }
@@ -80,7 +110,8 @@ class NBNShell extends HTMLElement {
   }
 
   // URLのパスに応じて画面を切り替えるハンドラ
-  handleNavigation(path) {
+  // handleNavigation(path)
+  changeMainContainer(path) {
     const mainContainer = this.shadowRoot.querySelector('main-container');
     const viewName = path.substring(1) || 'home';
     console.log(`Navigating to: ${viewName}`);

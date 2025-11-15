@@ -1,0 +1,56 @@
+﻿<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>test</title>
+    <script> 
+  window.onload = function () {
+    const display = document.querySelector('#aaa');
+ 
+    // --- ここから追加 ---
+    const button1 = document.querySelector('#button1');
+    const button2 = document.querySelector('#button2');
+    const button3 = document.querySelector('#button3');
+ 
+    button1.addEventListener('click', () => buttonClick(1));
+    button2.addEventListener('click', () => buttonClick(2));
+    button3.addEventListener('click', () => buttonClick(3));
+    // --- ここまで追加 ---
+ 
+    // 画面を更新するための関数
+    function updateContent(text) {
+      display.innerHTML = text;
+    }
+ 
+    // 各ボタンのクリック処理
+    function buttonClick(num) {
+      const text = `click ${num}`;
+      updateContent(text);
+      history.pushState({ text: text }, '', `/state${num}`);
+    }
+ 
+    // popstateイベントリスナーを追加
+    window.addEventListener('popstate', (event) => {
+      console.log('popstate event fired!', event.state);
+      if (event.state) {
+        updateContent(event.state.text);
+      } else {
+        updateContent("pushの挙動を確認する");
+      }
+    });
+ 
+    // ページが最初に読み込まれたときの初期表示
+    updateContent("pushの挙動を確認する");
+  }
+
+    </script>
+  </head>
+  <body>
+    <button id="button1">1</button>
+    <button id="button2">2</button>
+    <button id="button3">3</button>
+    <p id="aaa">
+      aa
+    </p>
+  </body>
+</html>
