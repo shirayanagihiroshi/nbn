@@ -46,14 +46,21 @@ class NBNShell extends HTMLElement {
   //             : 'replace' 履歴スタックの一番上を交換する
   changeState(path, howToChange){
     // 画面の変更
-    
+    // ダイアログの表示
+    if () {
+
+    // メインコンテナの表示
+    } else {
+      hideDialog();
+      changeMainContainer();
+    }
 
 
     // 履歴の操作
     if (howToChange == 'push') {
        history.pushState({ nbnstate : path }, '', path);
     } else {
-     history.replaceState({ nbnstate : path }, '', path);
+       history.replaceState({ nbnstate : path }, '', path);
     }
   }
 
