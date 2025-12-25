@@ -1,15 +1,21 @@
-/*
- * nbnShell.js
- * shell（外骨格）モジュール
- */
-
 /*import { createTable, foo } from './tableModule.js';*/
 import './TitleLine.js';
 import './MainContainer.js';
 import './MainMenu.js';
 import './ConfirmDialog.js';
 
+/**
+ * shell（外骨格）モジュール
+ * 本モジュールそのものはUIを持たない。
+ * UIを持つモジュールを配置して画面を作り上げるためのモジュール。
+ * main-container、main-menu は枠のみであり、その中身を個々のモジュールで
+ * 定義する。
+ * 本モジュールは画面の切り替えのコントロールも行う。
+ */
 class NBNShell extends HTMLElement {
+  /**
+   * コンストラクタ
+   */
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
@@ -40,14 +46,17 @@ class NBNShell extends HTMLElement {
     console.log("NBNShell constructor");
   }
 
-  // アプリケーションの状態遷移
-  // path        :
-  // howToChange : 'push'    履歴スタックに追加する
-  //             : 'replace' 履歴スタックの一番上を交換する
+  /**
+   * アプリケーションの状態遷移をする関数
+   * @param {string} path URLの一部に表示される部分。これが状態も表す。
+   * @param {string} howToChange どのように履歴を積むかを指定する。\
+   * 'push':履歴スタックに追加する。\
+   * 'replace':履歴スタックの一番上を交換する。
+   */
   changeState(path, howToChange){
     // 画面の変更
     // ダイアログの表示
-    if () {
+    if (1) {
 
     // メインコンテナの表示
     } else {
@@ -64,8 +73,9 @@ class NBNShell extends HTMLElement {
     }
   }
 
-
-  // 要素が文書に追加されるたびに呼び出される
+  /**
+   * カスタム要素がページに追加されたときに呼ばれるコールバック
+   */
   connectedCallback() {
     const mainmenu = this.shadowRoot.querySelector('main-menu');
 
@@ -100,24 +110,25 @@ class NBNShell extends HTMLElement {
 // pushするかreplaceStateするか　イベントで通知すればいいんじゃないか
 mainmenu.hide();
           history.pushState({ nbnstate : path }, '', path);
-          this.handleNavigation(path);
+          this.changeMainContainer(path);
         }
       }
     });
 
     // ブラウザの「戻る/進む」ボタンが押されたときの処理
     window.addEventListener('popstate', (event) => {
-      this.handleNavigation(location.pathname);
+      this.changeMainContainer(location.pathname);
     });
 
     // 初期表示時の処理
-    this.handleNavigation(location.pathname);
+    this.changeMainContainer(location.pathname);
 
     console.log("NBNShell connectedCallback");
   }
 
-  // URLのパスに応じて画面を切り替えるハンドラ
-  // handleNavigation(path)
+  /**
+   * main-containerに表示するモジュールを切り替える関数
+   */
   changeMainContainer(path) {
     const mainContainer = this.shadowRoot.querySelector('main-container');
     const viewName = path.substring(1) || 'home';

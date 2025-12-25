@@ -1,0 +1,43 @@
+﻿<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.2.7/purify.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+<script>
+  // DOMPurify.sanitize : サニタイズ
+  // marked.parse       : マークダウン->HTML
+  window.onload = function () {
+  document.getElementById("content").innerHTML =  DOMPurify.sanitize( marked.parse(
+    `
+# 教務webアプリ
+
+## アプリの概要
+
+生徒の出欠や成績等のデータを管理し、調査書、指導要録の印刷までを行う。
+
+## アプリの設計
+### 全体構成
+
+#### aa
+
+
+# 見出し\n\n**太字のテキスト**~~そんなばかな~~[readmeはこっちです](README.md)
+`
+  ));
+}
+</script>
+<div>マークダウンサンプル</div>
+<div id="content"></div>
+<div>マーメイドサンプル</div>
+<div class="mermaid">
+sequenceDiagram
+  ユーザ    ->> +Vue         : ログインボタンクリック
+  Vue      ->> +Laravel     : ログインAPI
+  Laravel  ->> +Database    : SQL
+    Note right of Database  : 認証テーブル参照
+  Database ->> -Laravel     : Result
+  alt ログイン成功
+    Laravel ->> Vue         : success
+  else 失敗
+    Laravel ->> -Vue        : failure
+  end
+  Vue       ->> -ユーザ      : 結果表示
+</div>

@@ -1,0 +1,13 @@
+﻿{
+  "source": {
+    "include": ["public/js"],           // ドキュメント化するフォルダ
+    //"exclude": ["node_modules"],      // 除外するフォルダ(includeの中のファイルを指定するもの)
+    "includePattern": ".+\\.js$",       // 対象にするファイルのパターン
+    "excludePattern": ".*\\.test\\.js$" // 「.test.js」で終わるファイルはすべて除外
+  },
+  "opts": {
+    "destination": "./out/",   // 出力先
+    "recurse": true,           // 再帰的に探索する
+    "readme": "README.md"      // トップページにREADMEを表示する
+  }
+}

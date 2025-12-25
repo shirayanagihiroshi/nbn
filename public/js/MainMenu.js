@@ -1,9 +1,11 @@
-/*
- * MainMenu.js
- *
+/**
+ * メインメニュー(常に画面右上にあるメニューボタンを押して表示される)
+ * 表示用クラス
  */
-
 class MainMenu extends HTMLElement {
+  /**
+   * コンストラクタ
+   */
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
@@ -36,17 +38,23 @@ class MainMenu extends HTMLElement {
     console.log("MainMenu constructor");
   }
 
-  // カスタム要素がページに追加されたときに呼ばれるコールバック
+  /**
+   * カスタム要素がページに追加されたときに呼ばれるコールバック
+   */
   connectedCallback() {
-    console.log("TitleLine connectedCallback");
+    console.log("MainMenu connectedCallback");
   }
 
-  // ダイアログを表示するためのメソッド
+  /**
+   * メインメニューを表示するためのメソッド
+   */
   show(config) {
     this.style.display = 'flex';
   }
 
-  // ダイアログを非表示にするためのメソッド
+  /**
+   * メインメニューを非表示にするためのメソッド
+   */
   hide(config) {
     this.style.display = 'none';
   }
