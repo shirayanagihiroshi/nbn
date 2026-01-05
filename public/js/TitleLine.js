@@ -1,11 +1,12 @@
-/*
- * TitleLine.js
- *
- */
-
 import { NBNDispatchEvent } from './NBNHelpers.js';
 
+/**
+ * タイトル行表示用クラス
+ */
 class TitleLine extends HTMLElement {
+  /**
+   * コンストラクタ
+   */
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
@@ -29,7 +30,9 @@ class TitleLine extends HTMLElement {
     console.log("TitleLine constructor");
   }
 
-  // カスタム要素がページに追加されたときに呼ばれるコールバック
+  /**
+   * カスタム要素がページに追加されたときに呼ばれるコールバック
+   */
   connectedCallback() {
     console.log("TitleLine connectedCallback");
     // ボタン要素を取得

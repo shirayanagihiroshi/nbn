@@ -48,9 +48,9 @@ class NBNShell extends HTMLElement {
 
   /**
    * アプリケーションの状態遷移をする関数
-   * @param {string} path URLの一部に表示される部分。これが状態も表す。
-   * @param {string} howToChange どのように履歴を積むかを指定する。\
-   * 'push':履歴スタックに追加する。\
+   * @param {string} path URLの一部に表示される部分。これがアプリケーションの状態も表す。
+   * @param {string} howToChange どのように履歴を積むかを指定する。
+   * 'push':履歴スタックに追加する。
    * 'replace':履歴スタックの一番上を交換する。
    */
   changeState(path, howToChange){
@@ -131,6 +131,9 @@ mainmenu.hide();
    */
   changeMainContainer(path) {
     const mainContainer = this.shadowRoot.querySelector('main-container');
+    // pathは"/setting"のような文字列で、substring(1)は先頭の"/"より後の文字列の意味。
+    // ||しているのは、pathが偽（falsy）な値だったら右側の値を採用する。
+    // つまりデフォルト値を設定している。
     const viewName = path.substring(1) || 'home';
     console.log(`Navigating to: ${viewName}`);
     mainContainer.changeView(viewName);

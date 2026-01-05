@@ -1,12 +1,14 @@
-/*
- * MainContainer.js
- * 
- */
-
 import './home.js';
 import './settings.js';
 
+/**
+ * メイン画面のモジュール
+ * タイトル行を除く部分の枠である。
+ */
 class MainContainer extends HTMLElement {
+  /**
+   * コンストラクタ
+   */
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
@@ -14,7 +16,10 @@ class MainContainer extends HTMLElement {
     console.log("MainContainer constructor");
   }
 
-  // 画面を切り替えるためのメソッド
+  /**
+   * メイン画面を切り替えるためのメソッド
+   * @param {string} viewName ??
+   */
   changeView(viewName) {
     const viewWrapper = this.shadowRoot.querySelector('#view-wrapper');
     if (!viewWrapper) {
@@ -31,7 +36,9 @@ class MainContainer extends HTMLElement {
     viewWrapper.appendChild(viewElement);
   }
 
-  // カスタム要素がページに追加されたときに呼ばれるコールバック
+  /**
+   * カスタム要素がページに追加されたときに呼ばれるコールバック
+   */
   connectedCallback() {
     console.log("MainContainer connectedCallback");
     // 初期画面として 'home' を表示する
