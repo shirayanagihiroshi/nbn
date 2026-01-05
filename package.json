@@ -3,9 +3,6 @@
   "version": "1.0.0",
   "description": "this is test",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -20,6 +17,7 @@
     "jsdoc": "^4.0.5"
   },
   "scripts": {
-    "docs": "jsdoc -c jsdoc.json"
+    "docs": "jsdoc -c jsdoc.json && node post-jsdoc.js",
+    "test": "jest"
   }
 }
