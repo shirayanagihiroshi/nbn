@@ -85,6 +85,7 @@ class NBNShell extends HTMLElement {
       mainmenu.show(event.detail);
     });
 
+    // リンクをクリックすることで画面遷移をするために
     // リンクを辿る操作をアプリケーションがカスタマイズする処理
     this.shadowRoot.addEventListener('click', (event) => {
       // クリックされたのが <a> タグで、同じオリジン内のリンクか確認
@@ -98,12 +99,15 @@ class NBNShell extends HTMLElement {
       // 例えば、現在のページのURLが https://www.example.com:8080/path/to/page?query=value#hash の場合、
       // location.origin は https://www.example.com:8080 を返します。
       // パス (/path/to/page)、クエリパラメータ (?query=value)、ハッシュ (#hash) は含まれません。
-      if (target.tagName === 'A' && target.href.startsWith(location.origin)) {
+      // つまりここでは、外部へのリンクでないなら、という判定
+      if (target.tagName == 'A' && target.href.startsWith(location.origin)) {
+        //ブラウザに通常通りのアクションを行うべきでないとつたえる。
         event.preventDefault();
-        const path = new URL(target.href).pathname; // リンクのpathだけを取り出す
+        // リンクのpathだけを取り出す
+        const path = new URL(target.href).pathname;
 
         // URLが現在のパスと同じでなければ、履歴を追加して画面を更新
-        if (path !== location.pathname) {
+        if (path != location.pathname) {
           if (path == '/closemenu') {
             history.back();
           }
