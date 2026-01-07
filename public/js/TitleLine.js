@@ -12,20 +12,20 @@ class TitleLine extends HTMLElement {
     this.attachShadow({ mode: 'open' });
     this.shadowRoot.innerHTML = `
       <style>
-        div {
+        #title {
           position : absolute;
           left     : 30px;
           top      : 10px;
           background-color : red;
         }
-        button {
+        #tomenu {
           position : absolute;
           right    : 30px;
           top      : 10px;
         }
       </style>
-      <div>成績処理</div>
-      <button id="toMenu">メニュー</button>
+      <div id="title">成績処理</div>
+      <a id="tomenu" href="/mainmenu">メニュー</a>
     `;
     console.log("TitleLine constructor");
   }
@@ -35,6 +35,7 @@ class TitleLine extends HTMLElement {
    */
   connectedCallback() {
     console.log("TitleLine connectedCallback");
+    /*
     // ボタン要素を取得
     const menuButton = this.shadowRoot.querySelector('#toMenu');
 
@@ -42,6 +43,7 @@ class TitleLine extends HTMLElement {
     menuButton.addEventListener('click', () => {
       NBNDispatchEvent('mainmenu',{});
     });
+    */
   }
 }
 

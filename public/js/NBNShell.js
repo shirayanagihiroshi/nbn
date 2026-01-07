@@ -53,24 +53,32 @@ class NBNShell extends HTMLElement {
    * 'push':履歴スタックに追加する。
    * 'replace':履歴スタックの一番上を交換する。
    */
-  changeState(path, howToChange){
-    // 画面の変更
-    // ダイアログの表示
-    if (1) {
+  changeState(path){
+    const mainmenu = this.shadowRoot.querySelector('main-menu');
 
-    // メインコンテナの表示
-    } else {
-      hideDialog();
-      changeMainContainer();
+    console.log("history ", history.length);
+    // いくつかの特別な遷移
+    if (path == '/mainmenu') { // メインメニューを表示
+      const mainmenu = this.shadowRoot.querySelector('main-menu');
+
+      mainmenu.show('');
+      history.pushState({ nbnstate : path }, '', path);
+      return;
+    } else if (path == '/closemenu') { // メインメニューを閉じる
+      history.back();
+      return;
+    } else if (path == 'confirmdialog') {
+
+      return;
     }
 
-
+    // 特別でない遷移
+    // ダイアログなどは消して
+    mainmenu.hide();
+    // メインコンテナを入れ替える
+    this.changeMainContainer(path);
     // 履歴の操作
-    if (howToChange == 'push') {
-       history.pushState({ nbnstate : path }, '', path);
-    } else {
-       history.replaceState({ nbnstate : path }, '', path);
-    }
+    history.replaceState({ nbnstate : path }, '', path);
   }
 
   /**
@@ -81,7 +89,7 @@ class NBNShell extends HTMLElement {
 
     // アプリケーションのどこかから 'mainmenu' イベントが発行されたらダイアログを表示
     document.addEventListener('mainmenu', (event) => {
-      history.pushState({ nbnstate : 'mainmenu' }, '', '/mainmenu');
+//      history.pushState({ nbnstate : 'mainmenu' }, '', '/mainmenu');
       mainmenu.show(event.detail);
     });
 
@@ -108,6 +116,8 @@ class NBNShell extends HTMLElement {
 
         // URLが現在のパスと同じでなければ、履歴を追加して画面を更新
         if (path != location.pathname) {
+	  this.changeState(path);
+/*
           if (path == '/closemenu') {
             history.back();
           }
@@ -115,17 +125,20 @@ class NBNShell extends HTMLElement {
 mainmenu.hide();
           history.pushState({ nbnstate : path }, '', path);
           this.changeMainContainer(path);
+*/
         }
       }
     });
 
     // ブラウザの「戻る/進む」ボタンが押されたときの処理
     window.addEventListener('popstate', (event) => {
-      this.changeMainContainer(location.pathname);
+      this.changeState(location.pathname)
+//  this.changeMainContainer(location.pathname);
     });
 
-    // 初期表示時の処理
-    this.changeMainContainer(location.pathname);
+    // 初期表示の処理
+    this.changeState('/home')
+//    this.changeMainContainer(location.pathname);
 
     console.log("NBNShell connectedCallback");
   }
