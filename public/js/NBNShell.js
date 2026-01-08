@@ -66,9 +66,6 @@ class NBNShell extends HTMLElement {
     } else if (path == '/closemenu') { // メインメニューを閉じる
       history.back();
       return;
-    } else if (path == 'confirmdialog') {
-
-      return;
     }
 
     // 特別でない遷移
@@ -89,10 +86,19 @@ class NBNShell extends HTMLElement {
     // この画面遷移のみ特殊
     // 他はリンクをクリックするなどしてchangeStateで遷移するが、
     // 様々なダイアログの設定をする関係で、確認ダイアログのケースのみイベント送信により
-    // 画面遷移を行う。
-    document.addEventListener('confirmdialog', (event) => {
-      confirmdialog.show(event.detail);
-      history.pushState({ nbnstate : 'confirmdialog' }, '', '/confirmdialog');
+    // 画面遷移を行う。また、状態を積まず、awaitして同期的に待つ。
+    document.addEventListener('confirmdialog', async (event) => {
+      if (event.detail.before != null) {
+        const temp = await confirmdialog.show(event.detail.before);
+      }
+      if (event.detail.afterSuccess != null) {
+        const temp = await confirmdialog.show(event.detail.afterSuccess);
+      }
+      if (event.detail.afterFailure != null) {
+        const temp = await confirmdialog.show(event.detail.afterFailure);
+      }
+      //history.pushState({ nbnstate : 'confirmdialog' }, '', '/confirmdialog');
+      console.log(temp);
     });
 
     // リンクをクリックすることで画面遷移をするために
@@ -118,7 +124,7 @@ class NBNShell extends HTMLElement {
 
         // URLが現在のパスと同じでなければ、履歴を追加して画面を更新
         if (path != location.pathname) {
-	  this.changeState(path);
+          this.changeState(path);
 /*
           if (path == '/closemenu') {
             history.back();

@@ -22,9 +22,16 @@ class SettingsView extends HTMLElement {
 
     // ボタンがクリックされたときの処理
     menuButton.addEventListener('click', () => {
-      let obj = { title   : 'setting画面からの確認',
-                  message : 'hogehogehoge'};
-      NBNDispatchEvent('confirmdialog', {detail : obj});
+      let objBefore        = { title   : 'setting画面からの確認',
+                               message : 'hogehogehoge'};
+      let objAfterSuccess  = { title   : 'setting画面からの確認',
+                               message : 'hogehogehoge'};
+      let objAfterFailure  = { title   : 'setting画面からの確認',
+                               message : 'hogehogehoge'};
+      NBNDispatchEvent('confirmdialog',
+                       {detail: {before       : objBefore,
+                                 afterSuccess : objAfterSuccess,
+                                 afterFailure : objAfterFailure}});
     });
   }
 

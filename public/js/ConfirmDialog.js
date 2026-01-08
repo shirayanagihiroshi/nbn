@@ -71,7 +71,11 @@ class ConfirmDialog extends HTMLElement {
 
     this.style.display = 'flex';
 
-    return new Promise(function (resolve) {
+    // Promiseのパラメータをfunctionにしてはいけない。
+    // thisが指すものが変わってしまうから。
+    return new Promise( (resolve) => {
+      // Promiseを作る関数(エグゼキュータ)は同期的に処理されることに注意。
+      // 後で(ユーザ操作を受けて)解決するためにthisのメンバに保持しておく。
       this.resolve = resolve;
     });
   }
