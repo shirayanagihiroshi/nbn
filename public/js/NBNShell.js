@@ -59,7 +59,6 @@ class NBNShell extends HTMLElement {
     console.log("history ", history.length);
     // いくつかの特別な遷移
     if (path == '/mainmenu') { // メインメニューを表示
-      const mainmenu = this.shadowRoot.querySelector('main-menu');
 
       mainmenu.show('');
       history.pushState({ nbnstate : path }, '', path);
@@ -85,12 +84,15 @@ class NBNShell extends HTMLElement {
    * カスタム要素がページに追加されたときに呼ばれるコールバック
    */
   connectedCallback() {
-    const mainmenu = this.shadowRoot.querySelector('main-menu');
+    const confirmdialog = this.shadowRoot.querySelector('confirm-dialog');
 
-    // アプリケーションのどこかから 'mainmenu' イベントが発行されたらダイアログを表示
-    document.addEventListener('mainmenu', (event) => {
-//      history.pushState({ nbnstate : 'mainmenu' }, '', '/mainmenu');
-      mainmenu.show(event.detail);
+    // この画面遷移のみ特殊
+    // 他はリンクをクリックするなどしてchangeStateで遷移するが、
+    // 様々なダイアログの設定をする関係で、確認ダイアログのケースのみイベント送信により
+    // 画面遷移を行う。
+    document.addEventListener('confirmdialog', (event) => {
+      confirmdialog.show(event.detail);
+      history.pushState({ nbnstate : 'confirmdialog' }, '', '/confirmdialog');
     });
 
     // リンクをクリックすることで画面遷移をするために

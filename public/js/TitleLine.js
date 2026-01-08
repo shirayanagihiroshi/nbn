@@ -1,5 +1,3 @@
-import { NBNDispatchEvent } from './NBNHelpers.js';
-
 /**
  * タイトル行表示用クラス
  */
