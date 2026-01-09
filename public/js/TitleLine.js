@@ -33,15 +33,6 @@ class TitleLine extends HTMLElement {
    */
   connectedCallback() {
     console.log("TitleLine connectedCallback");
-    /*
-    // ボタン要素を取得
-    const menuButton = this.shadowRoot.querySelector('#toMenu');
-
-    // メニューボタンがクリックされたときの処理
-    menuButton.addEventListener('click', () => {
-      NBNDispatchEvent('mainmenu',{});
-    });
-    */
   }
 }
 

@@ -18,7 +18,8 @@ class MainContainer extends HTMLElement {
 
   /**
    * メイン画面を切り替えるためのメソッド
-   * @param {string} viewName ??
+   * @param {string} viewName pathの先頭の/を除いたもの。
+   * これに-viewを付けたものがカスタムエレメントと定義されているものの名前
    */
   changeView(viewName) {
     const viewWrapper = this.shadowRoot.querySelector('#view-wrapper');
@@ -41,8 +42,6 @@ class MainContainer extends HTMLElement {
    */
   connectedCallback() {
     console.log("MainContainer connectedCallback");
-    // 初期画面として 'home' を表示する
-    this.changeView('home');
   }
 }
 

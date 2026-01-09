@@ -1,4 +1,5 @@
-import { NBNDispatchEvent } from './NBNHelpers.js';
+import { toConfirmDialog } from './NBNHelpers.js';
+import { NBNGetSeiseki } from './model.js';
 
 /*
  * settings.js
@@ -22,18 +23,26 @@ class SettingsView extends HTMLElement {
 
     // ボタンがクリックされたときの処理
     menuButton.addEventListener('click', () => {
-      let objBefore        = { title   : 'setting画面からの確認',
-                               message : 'hogehogehoge'};
-      let objAfterSuccess  = { title   : 'setting画面からの確認',
-                               message : 'hogehogehoge'};
-      let objAfterFailure  = { title   : 'setting画面からの確認',
-                               message : 'hogehogehoge'};
-      NBNDispatchEvent('confirmdialog',
-                       {detail: {before       : objBefore,
-                                 afterSuccess : objAfterSuccess,
-                                 afterFailure : objAfterFailure}});
+      let objBefore, objAfterSuccess, objAfterFailure;
+
+      objBefore = { title   : '確認',
+                    message : '登録してよいですか？',
+                    buttons : [{ label: 'OK',         onClickFunc: this.register },
+                               { label: 'キャンセル', onClickFunc: null }]};
+      objAfterSuccess = { title   : '処理成功',
+                          message : '登録しました',
+                          buttons : [{ label: 'OK',         onClickFunc: null }]};
+      objAfterFailure = { title   : '警告',
+                          message : '登録できませんでした',
+                          buttons : [{ label: 'OK',         onClickFunc: null }]};
+      toConfirmDialog(objBefore, objAfterSuccess, objAfterFailure);
     });
   }
 
+  register() {
+    console.log('register');
+    const temp = NBNGetSeiseki();
+    return temp;
+  }
 }
 customElements.define('settings-view', SettingsView);

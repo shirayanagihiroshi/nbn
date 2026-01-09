@@ -56,7 +56,7 @@ class NBNShell extends HTMLElement {
   changeState(path){
     const mainmenu = this.shadowRoot.querySelector('main-menu');
 
-    console.log("history ", history.length);
+    console.log("changeState : ", path, ",historyLength : ", history.length);
     // いくつかの特別な遷移
     if (path == '/mainmenu') { // メインメニューを表示
 
@@ -89,16 +89,25 @@ class NBNShell extends HTMLElement {
     // 画面遷移を行う。また、状態を積まず、awaitして同期的に待つ。
     document.addEventListener('confirmdialog', async (event) => {
       if (event.detail.before != null) {
-        const temp = await confirmdialog.show(event.detail.before);
+        const onClickFunc = await confirmdialog.show(event.detail.before);
+
+        if (onClickFunc != null) {
+          // 登録関係の処理は本来非同期だが、awaitして同期で処理する
+          const ret = await onClickFunc();
+
+          // 登録等の処理に成功したら
+          if (ret.isSuccess == true) {
+            if (event.detail.afterSuccess != null) {
+              const temp = await confirmdialog.show(event.detail.afterSuccess);
+            }
+          // 登録等の処理に成功したら 判定の仕方は後で更新する
+          } else {
+            if (event.detail.afterFailure != null) {
+              const temp = await confirmdialog.show(event.detail.afterFailure);
+            }
+          }
+        }
       }
-      if (event.detail.afterSuccess != null) {
-        const temp = await confirmdialog.show(event.detail.afterSuccess);
-      }
-      if (event.detail.afterFailure != null) {
-        const temp = await confirmdialog.show(event.detail.afterFailure);
-      }
-      //history.pushState({ nbnstate : 'confirmdialog' }, '', '/confirmdialog');
-      console.log(temp);
     });
 
     // リンクをクリックすることで画面遷移をするために
@@ -125,15 +134,6 @@ class NBNShell extends HTMLElement {
         // URLが現在のパスと同じでなければ、履歴を追加して画面を更新
         if (path != location.pathname) {
           this.changeState(path);
-/*
-          if (path == '/closemenu') {
-            history.back();
-          }
-// pushするかreplaceStateするか　イベントで通知すればいいんじゃないか
-mainmenu.hide();
-          history.pushState({ nbnstate : path }, '', path);
-          this.changeMainContainer(path);
-*/
         }
       }
     });
@@ -141,12 +141,10 @@ mainmenu.hide();
     // ブラウザの「戻る/進む」ボタンが押されたときの処理
     window.addEventListener('popstate', (event) => {
       this.changeState(location.pathname)
-//  this.changeMainContainer(location.pathname);
     });
 
     // 初期表示の処理
     this.changeState('/home')
-//    this.changeMainContainer(location.pathname);
 
     console.log("NBNShell connectedCallback");
   }
@@ -160,7 +158,6 @@ mainmenu.hide();
     // ||しているのは、pathが偽（falsy）な値だったら右側の値を採用する。
     // つまりデフォルト値を設定している。
     const viewName = path.substring(1) || 'home';
-    console.log(`Navigating to: ${viewName}`);
     mainContainer.changeView(viewName);
   }
 }

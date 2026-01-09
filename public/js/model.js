@@ -7,13 +7,18 @@
  * @param {string} EventName イベント名
  * @param {object} obj イベント送信時に一緒に伝えたいデータ
  */
-export async function NBNGetSeiseki() {
+export function NBNGetSeiseki() {
+  console.log("NBNGetSeiseki called");
 
   return new Promise( (resolve) => {
     setTimeout(() => {
-      resolve({studenId : 'studen01',
-               nendo    : 2025,
-               seiseki  : A});
+      resolve({isSuccess : true,
+               result : [{studenId : 'studen01',
+                          nendo    : 2025,
+                          seiseki  : 'A'},
+                         {studenId : 'studen02',
+                          nendo    : 2025,
+                          seiseki  : 'B'}]});
     }, 500);
   });
 }

@@ -1,9 +1,12 @@
-/*
+/**
  * ConfirmDialog.js
  * 汎用確認ダイアログ
+ * NBNHelpers.js の toConfirmDialog で表示される
  */
-
 class ConfirmDialog extends HTMLElement {
+  /**
+   * コンストラクタ
+   */
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
@@ -29,21 +32,24 @@ class ConfirmDialog extends HTMLElement {
     `;
   }
 
+  /**
+   * カスタム要素がページに追加されたときに呼ばれるコールバック
+   */
   connectedCallback() {
-    //this.shadowRoot.querySelector('#okButton').addEventListener('click', () => this.hide(true));
-    //this.shadowRoot.querySelector('#cancelButton').addEventListener('click', () => this.hide(false));
-    this.hide(true);
+    this.hide();
   }
 
-  // ダイアログを表示するためのメソッドを拡張
+  /**
+   * ダイアログを表示するためのメソッド
+   */
   show(config) {
     // デフォルト設定
     const defaultConfig = {
       title: '確認',
       message: '',
       buttons: [
-        { label: 'OK', value: true, variant: 'primary' },
-        { label: 'キャンセル', value: false, variant: 'secondary' }
+        { label: 'OK', onClickFunc: null },
+        { label: 'キャンセル', onClickFunc: null }
       ]
     };
     // 呼び出し元からの設定とデフォルトをマージ
@@ -60,11 +66,14 @@ class ConfirmDialog extends HTMLElement {
     finalConfig.buttons.forEach(buttonConfig => {
       const button = document.createElement('button');
       button.textContent = buttonConfig.label;
-      // (オプション) ボタンの見た目を切り替えるための属性などを設定
-      button.dataset.variant = buttonConfig.variant;
 
       button.addEventListener('click', () => {
-        this.hide(buttonConfig.value); // ボタン固有の値を返す
+        // ダイアログは消して
+        this.hide();
+        // ボタンに登録された関数を返す
+        if (this.resolve) {
+          this.resolve(buttonConfig.onClickFunc);
+        }
       });
       buttonContainer.appendChild(button);
     });
@@ -80,11 +89,11 @@ class ConfirmDialog extends HTMLElement {
     });
   }
 
-  hide(result) {
+  /**
+   * ダイアログを非表示にするためのメソッド
+   */
+  hide() {
     this.style.display = 'none';
-    if (this.resolve) {
-      this.resolve(result);
-    }
   }
 }
 customElements.define('confirm-dialog', ConfirmDialog);
