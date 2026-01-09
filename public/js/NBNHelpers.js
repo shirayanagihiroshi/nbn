@@ -2,6 +2,13 @@
 // モデルの操作は別モジュールとする。
 
 /**
+ * ログインダイアログを表示する関数
+ */
+export function toLoginDialog() {
+  NBNDispatchEvent('logindialog', {});
+}
+
+/**
  * 確認ダイアログを表示する関数
  * 登録処理を行う前に、ユーザに確認をしてもらうためのもの。
  * パラメータのobjectの設定例は以下

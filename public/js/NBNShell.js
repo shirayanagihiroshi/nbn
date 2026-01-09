@@ -41,6 +41,7 @@ class NBNShell extends HTMLElement {
       <title-line></title-line>
       <main-container></main-container>
       <main-menu></main-menu>
+      <login-dialog></login-dialog>
       <confirm-dialog></confirm-dialog>
     `;
     console.log("NBNShell constructor");
@@ -78,12 +79,39 @@ class NBNShell extends HTMLElement {
    * カスタム要素がページに追加されたときに呼ばれるコールバック
    */
   connectedCallback() {
-    const confirmdialog = this.shadowRoot.querySelector('confirm-dialog');
+    const logindialog = this.shadowRoot.querySelector('login-dialog');
 
-    // この画面遷移のみ特殊
+    // ログイン処理をするためのダイアログ
+    // これは特殊画面遷移
     // 他はリンクをクリックするなどしてchangeStateで遷移するが、
     // 様々なダイアログの設定をする関係で、確認ダイアログのケースのみイベント送信により
     // 画面遷移を行う。また、状態を積まず、awaitして同期的に待つ。
+    document.addEventListener('logindialog', async (event) => {
+      const temp = await logindialog.show();
+
+        if (onClickFunc != null) {
+          // 登録関係の処理は本来非同期だが、awaitして同期で処理する
+          const ret = await onClickFunc();
+
+          // 登録等の処理に成功したら
+          if (ret.isSuccess == true) {
+            if (event.detail.afterSuccess != null) {
+              const temp = await confirmdialog.show(event.detail.afterSuccess);
+            }
+          // 登録等の処理に成功したら 判定の仕方は後で更新する
+          } else {
+            if (event.detail.afterFailure != null) {
+              const temp = await confirmdialog.show(event.detail.afterFailure);
+            }
+          }
+        }
+      }
+    });
+
+    const confirmdialog = this.shadowRoot.querySelector('confirm-dialog');
+
+    // 登録などをする際にユーザに確認を行うための汎用ダイアログ
+    // これは特殊画面遷移
     document.addEventListener('confirmdialog', async (event) => {
       if (event.detail.before != null) {
         const onClickFunc = await confirmdialog.show(event.detail.before);
