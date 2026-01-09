@@ -36,7 +36,7 @@ sequenceDiagram
 
 ### クライアント側
 - shellにTitleLine、MainContainerを貼り付けて画面が構成されている。
-- MainContainerに追加するカスタムelementを切り替えることをで画面が遷移する。
+- MainContainerに追加するカスタムelementを切り替えることで画面が遷移する。
 - 画面遷移はshellが(アンカー(<a ...>)のクリックイベントを奪って行う。
 ```mermaid
 sequenceDiagram
