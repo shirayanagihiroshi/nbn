@@ -1,5 +1,5 @@
 import { toConfirmDialog } from './NBNHelpers.js';
-import { NBNGetSeiseki } from './model.js';
+import { NBNGetSeiseki } from './Model.js';
 
 /*
  * settings.js

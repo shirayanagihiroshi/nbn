@@ -49,9 +49,6 @@ class NBNShell extends HTMLElement {
   /**
    * アプリケーションの状態遷移をする関数
    * @param {string} path URLの一部に表示される部分。これがアプリケーションの状態も表す。
-   * @param {string} howToChange どのように履歴を積むかを指定する。
-   * 'push':履歴スタックに追加する。
-   * 'replace':履歴スタックの一番上を交換する。
    */
   changeState(path){
     const mainmenu = this.shadowRoot.querySelector('main-menu');

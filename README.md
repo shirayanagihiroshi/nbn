@@ -35,7 +35,35 @@ sequenceDiagram
 後で書く
 
 ### クライアント側
-後で書く
+- shellにTitleLine、MainContainerを貼り付けて画面が構成されている。
+- MainContainerに追加するカスタムelementを切り替えることをで画面が遷移する。
+- 画面遷移はshellが(アンカー(<a ...>)のクリックイベントを奪って行う。
+```mermaid
+sequenceDiagram
+  participant ユーザ
+  participant ブラウザ
+  participant shell
+  participant mainContainer
+  participant 各カスタムelement
+  ユーザ->>ブラウザ:クリック
+  ブラウザ-)shell:クリック
+  shell->>mainContainer:changeMainContainer
+  mainContainer->>各カスタムelement:生成、追加
+```
+- ブラウザのhistoryを追加することで状態を管理する。
+- 登録の確認などを行うダイアログだけは、画面遷移、historyの扱いが他と異なる。
+```mermaid
+sequenceDiagram
+  participant ユーザ
+  participant カスタムelement
+  participant shell
+  participant ConfirmDialog
+  ユーザ->>カスタムelement:クリック
+  カスタムelement-)shell:イベント送信
+  shell->>ConfirmDialog:show
+```
+- 登録確認のダイアログはawaitして同期的に処理をし、ブラウザのhistoryは変更しない。
+- データ処理の関数はModelに集め、ここでもawaitして同期的に処理を書く。
 
 ## アプリのテスト
 jestを使う。後で書く。

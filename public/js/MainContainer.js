@@ -19,7 +19,7 @@ class MainContainer extends HTMLElement {
   /**
    * メイン画面を切り替えるためのメソッド
    * @param {string} viewName pathの先頭の/を除いたもの。
-   * これに-viewを付けたものがカスタムエレメントと定義されているものの名前
+   * これに-viewを付けたものがカスタムエレメントとして定義されているものの名前になる。本関数は明示的に呼ばなくてもshellが勝手に呼ぶ。
    */
   changeView(viewName) {
     const viewWrapper = this.shadowRoot.querySelector('#view-wrapper');
