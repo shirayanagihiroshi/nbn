@@ -56,9 +56,10 @@ class TitleLine extends HTMLElement {
 /*
     const tologin = this.shadowRoot.querySelector('#tologin');
     tologin.style.display = 'none';
-*/
+    
     const tomenu = this.shadowRoot.querySelector('#tomenu');
     tomenu.style.display = 'none';
+*/
 
   }
 }

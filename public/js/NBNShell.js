@@ -89,20 +89,19 @@ class NBNShell extends HTMLElement {
     document.addEventListener('logindialog', async (event) => {
       const temp = await logindialog.show();
 
-        if (onClickFunc != null) {
-          // 登録関係の処理は本来非同期だが、awaitして同期で処理する
-          const ret = await onClickFunc();
+      if (onClickFunc != null) {
+        // 登録関係の処理は本来非同期だが、awaitして同期で処理する
+        const ret = await onClickFunc();
 
-          // 登録等の処理に成功したら
-          if (ret.isSuccess == true) {
-            if (event.detail.afterSuccess != null) {
-              const temp = await confirmdialog.show(event.detail.afterSuccess);
-            }
-          // 登録等の処理に成功したら 判定の仕方は後で更新する
-          } else {
-            if (event.detail.afterFailure != null) {
-              const temp = await confirmdialog.show(event.detail.afterFailure);
-            }
+        // 登録等の処理に成功したら
+        if (ret.isSuccess == true) {
+          if (event.detail.afterSuccess != null) {
+            const temp = await confirmdialog.show(event.detail.afterSuccess);
+          }
+        // 登録等の処理に成功したら 判定の仕方は後で更新する
+        } else {
+          if (event.detail.afterFailure != null) {
+            const temp = await confirmdialog.show(event.detail.afterFailure);
           }
         }
       }
