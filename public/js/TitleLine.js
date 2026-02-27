@@ -47,6 +47,7 @@ class TitleLine extends HTMLElement {
 
     // ボタン要素を取得
     const tologin = this.shadowRoot.querySelector('#tologin');
+//    tologin.style.display = 'none';
 
     // ボタンがクリックされたときの処理
     tologin.addEventListener('click', () => {

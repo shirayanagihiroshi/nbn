@@ -3,6 +3,7 @@ import './TitleLine.js';
 import './MainContainer.js';
 import './MainMenu.js';
 import './ConfirmDialog.js';
+import './LoginDialog.js';
 
 /**
  * shell（外骨格）モジュール
@@ -87,7 +88,7 @@ class NBNShell extends HTMLElement {
     // 様々なダイアログの設定をする関係で、確認ダイアログのケースのみイベント送信により
     // 画面遷移を行う。また、状態を積まず、awaitして同期的に待つ。
     document.addEventListener('logindialog', async (event) => {
-      const temp = await logindialog.show();
+      const onClickFunc = await logindialog.show();
 
       if (onClickFunc != null) {
         // 登録関係の処理は本来非同期だが、awaitして同期で処理する

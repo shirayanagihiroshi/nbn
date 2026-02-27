@@ -96,4 +96,4 @@ class LoginDialog extends HTMLElement {
     this.style.display = 'none';
   }
 }
-customElements.define('confirm-dialog', ConfirmDialog);
+customElements.define('login-dialog', LoginDialog);
