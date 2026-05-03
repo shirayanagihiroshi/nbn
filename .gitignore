@@ -2,6 +2,8 @@
 /node_modules/
 # jsdocで生成されるドキュメントは管理しない
 /out/
+# fontも管理しない
+/public/fonts/
 # 試験的に使うオレオレ証明書も管理しない
 # 本物の証明書も別途管理
 /private.key

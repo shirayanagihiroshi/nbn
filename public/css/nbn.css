@@ -4,6 +4,12 @@
  */
 
 /* リセット開始 */
+@font-face {
+  font-family: 'MyIPAmjMincho';
+  src: url('/fonts/ipamjm.ttf') format('truetype');
+  font-display: swap; /* 読み込み中もテキストを表示させる設定 */
+}
+
 body * {
    margin : 0;
    padding : 0;
@@ -14,4 +20,18 @@ body * {
  h1, h2, h3, h4, h5, h6  { margin : 20px; }
  p {margin: 5px;}
  ol, ul, dl {list-style-position : inside;}
+
+/* 氏名などで真面目に文字を表示したいときの特定のクラス */
+/* MyIPAmjMinchoが読めなかったときに                    */
+/* serif(そのパソコンに入っている標準的な明朝体) を使う */
+/* なお、serifはフォント名でなく、総称ファミリ名という  */
+/* 特別なキーワードなので、 クォーテーションで囲まない  */
+/* そういうCSSのルールがあるらしい                      */
+.name-field {
+  font-family: 'MyIPAmjMincho', serif;
+  color : red;
+}
+
  /* リセット終了 */
+
+
