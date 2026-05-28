@@ -5,6 +5,7 @@ import './MainMenu.js';
 import './ConfirmDialog.js';
 import './LoginDialog.js';
 
+
 /**
  * shell（外骨格）モジュール
  * 本モジュールそのものはUIを持たない。
@@ -45,19 +46,50 @@ class NBNShell extends HTMLElement {
       <login-dialog></login-dialog>
       <confirm-dialog></confirm-dialog>
     `;
-    console.log("NBNShell constructor");
+
+    // 状態遷移の入口はここに統合された
+    navigation.addEventListener('navigate', navigateEvent => {
+
+      // 外部サイトへの移動やダウンロードは無視する
+      if (!navigateEvent.canIntercept || navigateEvent.hashChange || navigateEvent.downloadRequest) return;
+
+      const url = new URL(navigateEvent.destination.url);
+/*
+      navigateEvent.intercept({
+        commit: 'immediate',
+        handler: async () => {
+          console.log("Handler start");
+          // 何もしない！
+          console.log("Handler end");
+        }
+      });
+      */
+      navigateEvent.intercept({
+//        commit: 'immediate',
+        handler : async () => await this.changeState(url.pathname)
+      });
+
+    });
+
+    console.log("NBNShell constructor end");
   }
 
   /**
    * アプリケーションの状態遷移をする関数
    * @param {string} path URLの一部に表示される部分。これがアプリケーションの状態も表す。
    */
-  changeState(path){
+  async changeState(path){
     const mainmenu = this.shadowRoot.querySelector('main-menu');
 
     console.log("changeState : ", path, ",historyLength : ", history.length);
+
     // いくつかの特別な遷移
-    if (path == '/mainmenu') { // メインメニューを表示
+    if (path == '/login') { // ログインダイアログを表示
+      const logindialog = this.shadowRoot.querySelector('login-dialog');
+      logindialog.show();
+      return;
+
+    } else if (path == '/mainmenu') { // メインメニューを表示
 
       mainmenu.show('');
       history.pushState({ nbnstate : path }, '', path);
@@ -73,7 +105,7 @@ class NBNShell extends HTMLElement {
     // メインコンテナを入れ替える
     this.changeMainContainer(path);
     // 履歴の操作
-    history.replaceState({ nbnstate : path }, '', path);
+    // history.replaceState({ nbnstate : path }, '', path);
   }
 
   /**
@@ -134,7 +166,7 @@ class NBNShell extends HTMLElement {
         }
       }
     });
-
+/*
     // リンクをクリックすることで画面遷移をするために
     // リンクを辿る操作をアプリケーションがカスタマイズする処理
     this.shadowRoot.addEventListener('click', (event) => {
@@ -167,9 +199,10 @@ class NBNShell extends HTMLElement {
     window.addEventListener('popstate', (event) => {
       this.changeState(location.pathname)
     });
-
+*/
+    
     // 初期表示の処理
-    this.changeState('/home')
+    //this.changeState('/home')
 
     console.log("NBNShell connectedCallback");
   }

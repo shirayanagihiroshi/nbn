@@ -10,6 +10,7 @@ class LoginDialog extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
+    this._resolve = null;
     this.shadowRoot.innerHTML = `
       <style>
         :host {
@@ -19,30 +20,119 @@ class LoginDialog extends HTMLElement {
           display: flex;
           align-items: center;
           justify-content: center;
+          z-index: 1000;
         }
-        .dialog { background: white; padding: 20px; border-radius: 5px; min-width: 300px; }
+        .dialog { background: white; padding: 20px; border-radius: 8px; min-width: 320px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        h3 { margin-top: 0; }
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 0.9em; margin-bottom: 5px; }
+        .input-group input { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
         #button-container { margin-top: 20px; text-align: right; }
-        #button-container button { margin-left: 10px; }
+        button { padding: 8px 16px; cursor: pointer; }
+        #login-btn { background-color: #007bff; color: white; border: none; border-radius: 4px; }
       </style>
       <div class="dialog">
-        <h3 id="title">ログインする？</h3>
-        <p id="message"></p>
-        <div id="button-container"></div>
+        <h3 id="title">ログイン</h3>
+        <div class="input-group">
+          <label for="userid">ユーザーID</label>
+          <input type="text" id="userid" autocomplete="username">
+        </div>
+        <div class="input-group">
+          <label for="password">パスワード</label>
+          <input type="password" id="password" autocomplete="current-password">
+        </div>
+        <div id="button-container">
+          <button id="cancel-btn">キャンセル</button>
+          <button id="login-btn">ログイン</button>
+        </div>
       </div>
     `;
+
+    this.shadowRoot.getElementById('login-btn').onclick  = () => this._submit();
+    this.shadowRoot.getElementById('cancel-btn').onclick = () => this._cancel();
+    // Enter keyでも送信できるように
+    this.shadowRoot.addEventListener('keydown', (e) => {
+      if(e.key === 'Enter') this._submit();
+    });
+
+    this.style.display = 'none'; // 初期状態は非表示
   }
 
   /**
    * カスタム要素がページに追加されたときに呼ばれるコールバック
    */
+  /*
   connectedCallback() {
     this.hide();
-  }
+  }*/
 
   /**
    * ダイアログを表示するためのメソッド
    */
   show(config) {
+    this.style.display = 'flex';
+    // 入力欄をクリアしてフォーカスを当てる
+    this.shadowRoot.queryElementById('userid').value   = '';
+    this.shadowRoot.queryElementById('password').value = '';
+    this.shadowRoot.queryElementById('userid').focus();;
+
+    return new Promise((resolve) => {
+      this._resolve = resolve;
+    });
+  }
+
+  async _submit() {
+    const userid = this.shadowRoot.getElementById('userid').value;
+    const password = this.shadowRoot.getElementById('password').value;
+
+    if (!userid || !password) {
+      alert("ユーザIDとパスワードを両方入力してください");
+      return;
+    }
+
+    try {
+      // fetchの実行
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json' // JSONを送ることを明示
+        },
+        body: JSON.stringify({ 
+          userid: userid, 
+          password: password 
+        })
+      });
+
+      // レスポンスを解析
+      const data = await response.json();
+
+      if (data.success) {
+        alert(data.message);
+        // 成功後の遷移処理など
+      } else {
+        alert('エラー: ' + data.message);
+      }
+
+    } catch (error) {
+      // 通信エラー（サーバーダウン、オフラインなど）の処理
+      console.error('通信に失敗しました', error);
+    }
+
+//    this._close({ success: true, userid, password });
+  }
+
+  _cancel() {
+    this._close({ success: false });
+  }
+
+  _close(result) {
+    this.style.display = 'none';
+    if (this._resolve) {
+      this._resolve(result);
+      this._resolve = null;
+    }
+  }
+    /*
     // デフォルト設定
     const defaultConfig = {
       title: '確認',
@@ -77,9 +167,9 @@ class LoginDialog extends HTMLElement {
       });
       buttonContainer.appendChild(button);
     });
-
     this.style.display = 'flex';
 
+    return;
     // Promiseのパラメータをfunctionにしてはいけない。
     // thisが指すものが変わってしまうから。
     return new Promise( (resolve) => {
@@ -88,12 +178,15 @@ class LoginDialog extends HTMLElement {
       this.resolve = resolve;
     });
   }
-
+*/
+  
   /**
    * ダイアログを非表示にするためのメソッド
    */
+  /*
   hide() {
     this.style.display = 'none';
   }
+  */
 }
 customElements.define('login-dialog', LoginDialog);

@@ -30,8 +30,8 @@ class TitleLine extends HTMLElement {
         }
       </style>
       <div id="title">成績処理</div>
-      <a id="tomenu" href="/mainmenu">メニュー</a>
-      <button id="tologin">ログイン</button>
+      <a id="tomenu"  href="/mainmenu">メニュー</a>
+      <a id="tologin" href="/login">ログイン</a>
     `;
     console.log("TitleLine constructor");
   }
@@ -45,22 +45,15 @@ class TitleLine extends HTMLElement {
     const tomenu = this.shadowRoot.querySelector('#tomenu');
     tomenu.style.display = 'none';
 
-    // ボタン要素を取得
     const tologin = this.shadowRoot.querySelector('#tologin');
 //    tologin.style.display = 'none';
 
     // ボタンがクリックされたときの処理
+    /*
     tologin.addEventListener('click', () => {
       toLoginDialog();
     });
-
-/*
-    const tologin = this.shadowRoot.querySelector('#tologin');
-    tologin.style.display = 'none';
-    
-    const tomenu = this.shadowRoot.querySelector('#tomenu');
-    tomenu.style.display = 'none';
-*/
+    */
 
   }
 }
