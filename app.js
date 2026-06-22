@@ -484,6 +484,18 @@ io.on("connection", function (socket) {
     next();
   });
   app.use( express.static( __dirname + '/public' ) ); // ややはまった。これがsetwatchの設定の前にあるとだめ
+
+  app.post('/api/login', function ( request, response ) {
+    const userid  = request.body.userid;
+    const password = request.body.password;
+    console.log('/api/login');
+    console.log(userid);
+    console.log(password);
+    let obj = { success : true,
+                message : 'dummy'};
+    response.json(obj);
+  });
+
   app.get('/', function ( request, response ) {
     console.log('request.url');
     console.log(request.url);

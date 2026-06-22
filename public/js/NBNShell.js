@@ -54,16 +54,7 @@ class NBNShell extends HTMLElement {
       if (!navigateEvent.canIntercept || navigateEvent.hashChange || navigateEvent.downloadRequest) return;
 
       const url = new URL(navigateEvent.destination.url);
-/*
-      navigateEvent.intercept({
-        commit: 'immediate',
-        handler: async () => {
-          console.log("Handler start");
-          // 何もしない！
-          console.log("Handler end");
-        }
-      });
-      */
+
       navigateEvent.intercept({
 //        commit: 'immediate',
         handler : async () => await this.changeState(url.pathname)
@@ -79,29 +70,30 @@ class NBNShell extends HTMLElement {
    * @param {string} path URLの一部に表示される部分。これがアプリケーションの状態も表す。
    */
   async changeState(path){
-    const mainmenu = this.shadowRoot.querySelector('main-menu');
+    const mainmenu    = this.shadowRoot.querySelector('main-menu');
+    const logindialog = this.shadowRoot.querySelector('login-dialog');
 
     console.log("changeState : ", path, ",historyLength : ", history.length);
 
     // いくつかの特別な遷移
     if (path == '/login') { // ログインダイアログを表示
-      const logindialog = this.shadowRoot.querySelector('login-dialog');
       logindialog.show();
       return;
 
     } else if (path == '/mainmenu') { // メインメニューを表示
 
       mainmenu.show('');
-      history.pushState({ nbnstate : path }, '', path);
+      //history.pushState({ nbnstate : path }, '', path);
       return;
     } else if (path == '/closemenu') { // メインメニューを閉じる
-      history.back();
+      navigation.back();
       return;
     }
 
     // 特別でない遷移
     // ダイアログなどは消して
     mainmenu.hide();
+    logindialog.close();
     // メインコンテナを入れ替える
     this.changeMainContainer(path);
     // 履歴の操作
@@ -112,6 +104,7 @@ class NBNShell extends HTMLElement {
    * カスタム要素がページに追加されたときに呼ばれるコールバック
    */
   connectedCallback() {
+    /*
     const logindialog = this.shadowRoot.querySelector('login-dialog');
 
     // ログイン処理をするためのダイアログ
@@ -139,7 +132,6 @@ class NBNShell extends HTMLElement {
         }
       }
     });
-
     const confirmdialog = this.shadowRoot.querySelector('confirm-dialog');
 
     // 登録などをする際にユーザに確認を行うための汎用ダイアログ
@@ -166,43 +158,7 @@ class NBNShell extends HTMLElement {
         }
       }
     });
-/*
-    // リンクをクリックすることで画面遷移をするために
-    // リンクを辿る操作をアプリケーションがカスタマイズする処理
-    this.shadowRoot.addEventListener('click', (event) => {
-      // クリックされたのが <a> タグで、同じオリジン内のリンクか確認
-      // event.target の代わりに event.composedPath()[0] を使う
-      // event.composedPath() メソッドはイベントが伝播してきた経路（DOMノードの配列）
-      // を返す。この配列の最初の要素が実際にイベントを発生させた要素
-      const target = event.composedPath()[0];
-
-      // location.origin は現在表示されているWebページのURLから、
-      // スキーム（プロトコル）、ホスト名、ポート番号を組み合わせた文字列を返します。
-      // 例えば、現在のページのURLが https://www.example.com:8080/path/to/page?query=value#hash の場合、
-      // location.origin は https://www.example.com:8080 を返します。
-      // パス (/path/to/page)、クエリパラメータ (?query=value)、ハッシュ (#hash) は含まれません。
-      // つまりここでは、外部へのリンクでないなら、という判定
-      if (target.tagName == 'A' && target.href.startsWith(location.origin)) {
-        //ブラウザに通常通りのアクションを行うべきでないとつたえる。
-        event.preventDefault();
-        // リンクのpathだけを取り出す
-        const path = new URL(target.href).pathname;
-
-        // URLが現在のパスと同じでなければ、履歴を追加して画面を更新
-        if (path != location.pathname) {
-          this.changeState(path);
-        }
-      }
-    });
-
-    // ブラウザの「戻る/進む」ボタンが押されたときの処理
-    window.addEventListener('popstate', (event) => {
-      this.changeState(location.pathname)
-    });
 */
-    
-    // 初期表示の処理
-    //this.changeState('/home')
 
     console.log("NBNShell connectedCallback");
   }
