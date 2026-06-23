@@ -31,7 +31,7 @@ class MainMenu extends HTMLElement {
         <ul>
           <li><a href="/home">home</a></li>
           <li><a href="/settings">setting</a></li>
-          <li><a href="/closemenu">メニューを閉じる</a></li>
+          <li><a id="closemenu" href="/closemenu">メニューを閉じる</a></li>
         </ul>
       </div>
     `;
@@ -43,6 +43,12 @@ class MainMenu extends HTMLElement {
    */
   connectedCallback() {
     console.log("MainMenu connectedCallback");
+
+    let closemenu = this.shadowRoot.getElementById('closemenu');
+      closemenu.addEventListener('click', function () {
+      navigation.back();
+      return false;
+    });
   }
 
   /**

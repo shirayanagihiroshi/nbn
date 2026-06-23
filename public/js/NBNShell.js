@@ -82,10 +82,6 @@ class NBNShell extends HTMLElement {
     } else if (path == '/mainmenu') { // メインメニューを表示
 
       mainmenu.show('');
-      //history.pushState({ nbnstate : path }, '', path);
-      return;
-    } else if (path == '/closemenu') { // メインメニューを閉じる
-      navigation.back();
       return;
     }
 
@@ -168,13 +164,9 @@ class NBNShell extends HTMLElement {
   changeMainContainer(path) {
     const mainContainer = this.shadowRoot.querySelector('main-container');
     // pathは"/setting"のような文字列で、substring(1)は先頭の"/"より後の文字列の意味。
-    // ||しているのは、pathが偽（falsy）な値だったら右側の値を採用する。
-    // つまりデフォルト値を設定している。
-//    const viewName = path.substring(1) || 'home';
     const viewName = path.substring(1);
     mainContainer.changeView(viewName);
   }
 }
 
 customElements.define('nbn-shell', NBNShell);
-//
