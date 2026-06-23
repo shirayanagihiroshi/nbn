@@ -1,4 +1,4 @@
-import { toConfirmDialog } from './NBNHelpers.js';
+//import { toConfirmDialog } from './NBNHelpers.js';
 import { NBNGetSeiseki } from './Model.js';
 
 /*
@@ -35,7 +35,7 @@ class SettingsView extends HTMLElement {
       objAfterFailure = { title   : '警告',
                           message : '登録できませんでした',
                           buttons : [{ label: 'OK',         onClickFunc: null }]};
-      toConfirmDialog(objBefore, objAfterSuccess, objAfterFailure);
+//      toConfirmDialog(objBefore, objAfterSuccess, objAfterFailure);
     });
   }
 

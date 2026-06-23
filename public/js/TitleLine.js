@@ -1,5 +1,3 @@
-import { toLoginDialog } from './NBNHelpers.js';
-
 /**
  * タイトル行表示用クラス
  */
@@ -41,20 +39,24 @@ class TitleLine extends HTMLElement {
    */
   connectedCallback() {
     console.log("TitleLine connectedCallback");
+    // ログイン成功イベントを待ち受ける
+    window.addEventListener('app-login-success', (event) => {
+      this.logined(event.detail.username); //usernameは未使用
+    });
 
     const tomenu = this.shadowRoot.querySelector('#tomenu');
-    tomenu.style.display = 'none';
-
     const tologin = this.shadowRoot.querySelector('#tologin');
-//    tologin.style.display = 'none';
+    tomenu.style.display = 'none';
+  }
 
-    // ボタンがクリックされたときの処理
-    /*
-    tologin.addEventListener('click', () => {
-      toLoginDialog();
-    });
-    */
-
+  /**
+   * ログインするリンクをメニューへのリンクにする
+   */
+  logined() {
+    const tomenu = this.shadowRoot.querySelector('#tomenu');
+    const tologin = this.shadowRoot.querySelector('#tologin');
+    tologin.style.display = 'none';
+    tomenu.style.display = 'block';
   }
 }
 

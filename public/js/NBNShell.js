@@ -56,7 +56,6 @@ class NBNShell extends HTMLElement {
       const url = new URL(navigateEvent.destination.url);
 
       navigateEvent.intercept({
-//        commit: 'immediate',
         handler : async () => await this.changeState(url.pathname)
       });
 
@@ -171,7 +170,8 @@ class NBNShell extends HTMLElement {
     // pathは"/setting"のような文字列で、substring(1)は先頭の"/"より後の文字列の意味。
     // ||しているのは、pathが偽（falsy）な値だったら右側の値を採用する。
     // つまりデフォルト値を設定している。
-    const viewName = path.substring(1) || 'home';
+//    const viewName = path.substring(1) || 'home';
+    const viewName = path.substring(1);
     mainContainer.changeView(viewName);
   }
 }

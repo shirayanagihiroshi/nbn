@@ -41,17 +41,30 @@
     function buttonClick(num) {
       const text = `click ${num}`;
       updateContent(text);
-      history.pushState({ text: text }, '', `/state${num}`);
+      navigation.navigate(text, {state:`/state${num}`}, {history: 'replace'});
+      //history.pushState({ text: text }, '', `/state${num}`);
     }
  
     // popstateイベントリスナーを追加
-    window.addEventListener('popstate', (event) => {
-      console.log('popstate event fired!', event.state);
-      if (event.state) {
-        updateContent(event.state.text);
-      } else {
-        updateContent("pushの挙動を確認する");
-      }
+//    window.addEventListener('popstate', (event) => {
+    navigation.addEventListener('navigate', navigateEvent => {
+
+      // 外部サイトへの移動やダウンロードは無視する
+      if (!navigateEvent.canIntercept || navigateEvent.hashChange || navigateEvent.downloadRequest) return;
+
+      let aa = navigateEvent.destination.getState();
+      console.log('navigate event fired!', aa);
+
+      navigateEvent.intercept({
+
+        handler : () => {
+          if (aa) {
+            updateContent(aa);
+          } else {
+            updateContent("pushの挙動を確認する");
+          }
+        }
+      });
     });
  
     // ページが最初に読み込まれたときの初期表示

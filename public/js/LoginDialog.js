@@ -1,7 +1,9 @@
+import { NBNDispatchEvent } from './NBNHelpers.js';
+
 /**
  * LoginDialog.js
  * ログイン用ダイアログ
- * NBNHelpers.js の toLoginDialog で表示される
+ * TitleLineのログインをクリックし表示される
  */
 class LoginDialog extends HTMLElement {
   /**
@@ -10,7 +12,7 @@ class LoginDialog extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
-    this._resolve = null;
+//    this._resolve = null;
     this.shadowRoot.innerHTML = `
       <style>
         :host {
@@ -20,7 +22,7 @@ class LoginDialog extends HTMLElement {
           display: flex;
           align-items: center;
           justify-content: center;
-          z-index: 1000;
+          z-index: 2;
         }
         .dialog { background: white; padding: 20px; border-radius: 8px; min-width: 320px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
         h3 { margin-top: 0; }
@@ -61,10 +63,8 @@ class LoginDialog extends HTMLElement {
   /**
    * カスタム要素がページに追加されたときに呼ばれるコールバック
    */
-  /*
   connectedCallback() {
-    this.hide();
-  }*/
+  }
 
   /**
    * ダイアログを表示するためのメソッド
@@ -72,18 +72,20 @@ class LoginDialog extends HTMLElement {
   show(config) {
     this.style.display = 'flex';
     // 入力欄をクリアしてフォーカスを当てる
-    this.shadowRoot.queryElementById('userid').value   = '';
-    this.shadowRoot.queryElementById('password').value = '';
-    this.shadowRoot.queryElementById('userid').focus();;
-
+    this.shadowRoot.querySelector('#userid').value   = '';
+    this.shadowRoot.querySelector('#password').value = '';
+    this.shadowRoot.querySelector('#userid').focus();
+/*
     return new Promise((resolve) => {
       this._resolve = resolve;
     });
+    */
+    return;
   }
 
   async _submit() {
-    const userid = this.shadowRoot.getElementById('userid').value;
-    const password = this.shadowRoot.getElementById('password').value;
+    const userid   = this.shadowRoot.querySelector('#userid').value;
+    const password = this.shadowRoot.querySelector('#password').value;
 
     if (!userid || !password) {
       alert("ユーザIDとパスワードを両方入力してください");
@@ -108,7 +110,11 @@ class LoginDialog extends HTMLElement {
 
       if (data.success) {
         // 成功後の遷移処理など
-        navigation.navigate('/settings'); // これはテストコード
+
+        // タイトルラインのログインをメニューへ変更
+        NBNDispatchEvent('app-login-success', {detail: { username: "hogehoge" }})
+        // これはテストコード
+        navigation.navigate('/home'); // これはテストコード
       } else {
         alert('エラー: ' + data.message);
       }
@@ -118,23 +124,26 @@ class LoginDialog extends HTMLElement {
       console.error('通信に失敗しました', error);
     }
 
-//    this._close({ success: true, userid, password });
+    this._close();
   }
 
   _cancel() {
-    this._close({ success: false });
+    navigation.back();
+//    this._close({ success: false });
   }
 
   close(result) {
-    this._close({ success: false });
+    this._close();
   }
 
   _close(result) {
     this.style.display = 'none';
+/*
     if (this._resolve) {
       this._resolve(result);
       this._resolve = null;
     }
+*/
   }
 }
 customElements.define('login-dialog', LoginDialog);
