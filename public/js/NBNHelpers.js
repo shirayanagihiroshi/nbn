@@ -40,3 +40,48 @@ export function NBNDispatchEvent(EventName, obj) {
   window.dispatchEvent(event);
 }
 
+/**
+ * 全角英数字を半角に変換するメソッド
+ * @param {str} 全角英数字を含むかもしれない文字列
+ */
+export function NBNZenkaku2hankaku(str) {
+  // 全角英数字を半角に変換
+  str = str.replace(/[Ａ-Ｚａ-ｚ０-９]/g, function(s) {
+    return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+  });
+  return str;
+}
+
+/**
+ * Excelデータ（TSV）を二次元配列に変換するメソッド
+ * @param {text} TSV
+ */
+export function NBNParseExcelData(text) {
+    // 改行コード（Windowsは\r\n、Macは\n両対応）で区切って行ごとの配列にする
+    const rows = text.trim().split(/\r?\n/);
+
+    // 各行を「タブ（\t）」で区切って、二次元配列を作る
+    return rows.map(row => row.split('\t'));
+}
+
+/**
+ * 二次元配列をhtmlのtableへ変換するメソッド
+ * @param {matrix} 二次元配列
+ */
+export function NBNrenderTable(matrix) {
+
+  if (matrix.length === 0) return;
+
+  let html = '<table>';
+  matrix.forEach((row, rowIndex) => {
+    html += '<tr>';
+    row.forEach(cell => {
+      // 最初の行はヘッダー（th）にする
+      html += rowIndex === 0 ? `<th>${cell}</th>` : `<td>${cell}</td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</table>';
+
+  return html;
+}

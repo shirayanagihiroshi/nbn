@@ -1,5 +1,6 @@
 import './home.js';
 import './settings.js';
+import './selectInputTarget.js';
 
 /**
  * メイン画面のモジュール
