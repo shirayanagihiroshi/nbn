@@ -42,7 +42,7 @@ export function NBNDispatchEvent(EventName, obj) {
 
 /**
  * 全角英数字を半角に変換するメソッド
- * @param {str} 全角英数字を含むかもしれない文字列
+ * @param {string} str 全角英数字を含むかもしれない文字列
  */
 export function NBNZenkaku2hankaku(str) {
   // 全角英数字を半角に変換
@@ -54,7 +54,7 @@ export function NBNZenkaku2hankaku(str) {
 
 /**
  * Excelデータ（TSV）を二次元配列に変換するメソッド
- * @param {text} TSV
+ * @param {string} text TSV
  */
 export function NBNParseExcelData(text) {
     // 改行コード（Windowsは\r\n、Macは\n両対応）で区切って行ごとの配列にする
@@ -65,23 +65,80 @@ export function NBNParseExcelData(text) {
 }
 
 /**
- * 二次元配列をhtmlのtableへ変換するメソッド
- * @param {matrix} 二次元配列
+ * 二次元配列を横に結合するメソッド
+ * @param {string[][]} matrixLeft 結合する表(左)
+ * @param {string[][]} matrixRight 結合する表(右)
  */
-export function NBNrenderTable(matrix) {
+export function NBNconbineMatrixHorizon(matrixLeft, matrixRight) {
+  // 横に結合する
+  const combined = matrixLeft.map((row, index) => {
+    // matrixLeft の各行（row）に、matrixRight の同じ行（index番目）を合体させる
+    return row.concat(matrixRight[index]);
+  });
+  return combined;
+}
 
-  if (matrix.length === 0) return;
+/**
+ * 二次元配列を縦に結合するメソッド
+ * @param {string[][]} matrixUpper 結合する表(上)
+ * @param {string[][]} matrixLower 結合する表(下)
+ */
+export function NBNconbineMatrixVertical(matrixUpper, matrixLower) {
+  // 下方向に結合する
+  return matrixUpper.concat(matrixLower);
+}
+
+/**
+ * 二次元配列のs列目からt列目までで、かつu行目以降を切り出すメソッド
+ * @param {string[][]} matrix 切り出す元の表
+ * @param {number} i 切り出す行(ここ以降) これ以降欲しい　(0スタート)
+ * @param {number} j 切り出す列(start) ここから欲しい　(0スタート)
+ * @param {number} k 切り出す列(end) ここまで欲しい　(0スタート)
+ */
+export function NBNextracteMatrix(matrix, i, j, k) {
+  const extracted = matrix.map(row => {
+    // 各行を、sliceを使って最初のn要素だけに切り詰める
+    return row.slice(j, k+1);
+  });
+  return extracted.slice(i, matrix.length);
+}
+
+/**
+ * 二次元配列をhtmlのtableへ変換する高度な共通関数
+ * @param {Array} matrix 二次元配列
+ * @param {Function} cellConfigFn 各セルの設定を決める関数 (row, col, value) => { isEditable: boolean }
+ * @return {string} HTML文字列
+ */
+export function NBNrenderTable(matrix, cellConfigFn) {
+  if (!matrix || matrix.length === 0) return '';
 
   let html = '<table>';
   matrix.forEach((row, rowIndex) => {
     html += '<tr>';
-    row.forEach(cell => {
-      // 最初の行はヘッダー（th）にする
-      html += rowIndex === 0 ? `<th>${cell}</th>` : `<td>${cell}</td>`;
+    row.forEach((cell, colIndex) => {
+      if (rowIndex === 0) {
+        html += `<th>${cell}</th>`;
+      } else {
+        // 与えられたルール関数に「現在の行・列・値」を投げて判断を仰ぐ。以下のように使う
+        //
+        // const html = NBNrenderTable(this.scoreData, (rowIndex, colIndex, value) => {
+        //   「4列目（colIndex===3）かつ 管理期間内（canEdit）」というルールをその場で定義して渡す
+        //    return {
+        //      isEditable: (colIndex === 3 && canEdit)
+        //    };
+        // });
+        const config = cellConfigFn ? cellConfigFn(rowIndex, colIndex, cell) : { isEditable: false };
+        
+        if (config.isEditable) {
+          html += `<td class="editable-cell" contenteditable="true">${cell}</td>`;
+        } else {
+          html += `<td>${cell}</td>`;
+        }
+      }
     });
+    
     html += '</tr>';
   });
   html += '</table>';
-
   return html;
 }
