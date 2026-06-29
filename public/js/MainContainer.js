@@ -1,6 +1,7 @@
 import './home.js';
 import './settings.js';
 import './selectInputTarget.js';
+import './registerKamoku.js';
 
 /**
  * メイン画面のモジュール
