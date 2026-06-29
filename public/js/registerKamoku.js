@@ -87,7 +87,33 @@ class registerKamokuView extends HTMLElement {
 
   // フォーカスを上下に移動させるメソッド
   _register(matrix) {
-    
+    if (!matrix || matrix.length === 0) {
+      return;
+    }
+
+    // 配列の配列（二次元配列）を、オブジェクトの配列へ「写像（マッピング）」する
+    // matrixの中身: [['2026', 'M1', '数学Ⅰ', ...], ['2026', 'MA', '数学A', ...]]
+    const kamokuList = matrix.map(row => {
+
+      // 事前に安全にトリムした文字列を取得（データがない場合は空文字）
+      const getRawStr = (idx) => (row[idx] ? String(row[idx]).trim() : '');
+
+      return {
+        // 数値への変換（Number()を使用。変換できない文字は 0 または null に安全に倒す）
+        nendo:      getRawStr(0) ? Number(getRawStr(0)) : null, 
+        kamokuId:   getRawStr(1), // 文字列のまま
+        kamokuName: getRawStr(2), // 文字列のまま
+        gakunen:    getRawStr(3) ? Number(getRawStr(3)) : null, 
+        // 真偽値への変換（"1" なら true、それ以外はすべて false）
+        zenki:      getRawStr(4) == '1', 
+        kouki:      getRawStr(5) == '1', 
+        godankai:   getRawStr(6) == '1', 
+        // 数値への変換
+        sortNo:     getRawStr(7) ? Number(getRawStr(7)) : null
+      };
+    });
+
+    console.log("変換後のオブジェクト配列:", kamokuList)
   }
 
 
