@@ -86,7 +86,7 @@ class registerKamokuView extends HTMLElement {
 
     try {
       // fetchの実行
-      const response = await fetch('/api/fetch/kamoku', {
+      const response = await fetch('/api/fetch/kamoku?nendo=2026&gakunen=3', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json' // JSONを送ることを明示
@@ -103,7 +103,7 @@ class registerKamokuView extends HTMLElement {
     }
   }
 
-  // フォーカスを上下に移動させるメソッド
+  // 登録処理
   async _register(matrix) {
     if (!matrix || matrix.length === 0) {
       return;
@@ -133,7 +133,7 @@ class registerKamokuView extends HTMLElement {
 
     try {
       // fetchの実行
-      const response = await fetch('/api/store/kamoku?nendo=2026&gakunen=3', {
+      const response = await fetch('/api/store/kamoku', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json' // JSONを送ることを明示
