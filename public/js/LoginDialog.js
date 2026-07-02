@@ -94,7 +94,7 @@ class LoginDialog extends HTMLElement {
 
     try {
       // fetchの実行
-      const response = await fetch('/api/login', {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json' // JSONを送ることを明示

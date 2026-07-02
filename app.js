@@ -1,9 +1,8 @@
 'use strict';
 
 //------モジュールスコープ変数s--------
-  var
+/*  var
     keys     = require('./lib/keys'),
-    fs       = require('fs'),
     express  = require('express'),
     app      = express(),
     router   = express.Router(),
@@ -16,10 +15,45 @@
     db       = require('./lib/database'),
     utils    = require('./lib/util_s'),
     port     = 4001;
+*/
+// ライブラリのインポート
+import fs from 'fs';                 // ファイルシステム操作用の標準ライブラリ
+import path from 'path';             // パス操作用の標準ライブラリ
+import { fileURLToPath } from 'url'; // URL変換用の関数
+import express from 'express';
+import { createServer } from 'https';
 
+// 自作ライブラリのインポート
+import keys  from './lib/keys.js';
+import crypt from './lib/crypt.js';
+import db    from './lib/database.js';
+import utils from './lib/util_s.js';
+
+// expressルーターの設定
+import authRouter from './routes/auth.js';
+
+// ESMモードで「__dirname」を再現するための設定
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// 各種初期化設定
+const app = express();
+const port = 4001;
+
+// HTTPSサーバーの作成
+const http = createServer({
+  key  : fs.readFileSync(keys.privkeyFilePath),
+  cert : fs.readFileSync(keys.certFilePath)
+}, app);
+
+// 🚀 Socket.ioサーバーの作成
+/*
+const io = new Server(http);
+*/
 //------モジュールスコープ変数e--------
 
 //------ユーティリティメソッドs--------
+/*
 io.on("connection", function (socket) {
   // 単に取得するだけの処理はまとめておく
   // ログインなど特殊なのは別処理
@@ -94,6 +128,7 @@ io.on("connection", function (socket) {
   });
 
   socket.on('updateSyukketsu', function (msg) {
+*/
     /*
     let i;
     console.log("* * updateSyukketsu * *");
@@ -105,7 +140,7 @@ io.on("connection", function (socket) {
     for (i = 0; i < msg.syukketsuData.member.length; i++) {
       console.log(msg.syukketsuData.member[i]);
     }*/
-
+/*
     db.findManyDocuments('user', {userId:msg.AKey.userId}, {projection:{_id:0}}, function (result) {
       // ログイン中のユーザにのみ回答
       if (result.length != 0 && msg.AKey.token == result[0].token ) {
@@ -131,6 +166,7 @@ io.on("connection", function (socket) {
   });
 
   socket.on('insertRenraku', function (msg) {
+*/
     /*
     console.log("* * insertRenraku * *");
     console.log("gakunen:" + msg.renrakuData.gakunen);
@@ -139,6 +175,7 @@ io.on("connection", function (socket) {
     console.log("day:"     + msg.renrakuData.day);
     console.log("name:"     + msg.renrakuData.name);
     */
+/*
     db.findManyDocuments('user', {userId:msg.AKey.userId}, {projection:{_id:0}}, function (result) {
       // ログイン中のユーザにのみ回答
       if (result.length != 0 && msg.AKey.token == result[0].token ) {
@@ -156,6 +193,7 @@ io.on("connection", function (socket) {
   });
 
   socket.on('deleteRenraku', function (msg) {
+*/
     /*
     console.log("* * deleteRenraku * *");
     console.log("gakunen:" + msg.SKey.gakunen);
@@ -164,6 +202,7 @@ io.on("connection", function (socket) {
     console.log("month:"   + msg.SKey.month);
     console.log("day:"     + msg.SKey.day);
     */
+/*
     db.findManyDocuments('user', {userId:msg.AKey.userId}, {projection:{_id:0}}, function (result) {
       // ログイン中のユーザにのみ回答
       if (result.length != 0 && msg.AKey.token == result[0].token ) {
@@ -266,6 +305,7 @@ io.on("connection", function (socket) {
   });
 
   socket.on('updateJyugyou', function (msg) {
+*/
     /*let i;
     console.log("* * updateJyugyou * *");
     for (i = 0; i < msg.jikanwariData.length; i++) {
@@ -274,7 +314,7 @@ io.on("connection", function (socket) {
       console.log("koma:"      + msg.jikanwariData[i].koma);
       console.log("jyugyouId:" + msg.jikanwariData[i].jyugyouId);
     }*/
-
+/*
     db.findManyDocuments('user', {userId:msg.AKey.userId}, {projection:{_id:0}}, function (result) {
       // ログイン中のユーザにのみ回答
       if (result.length != 0 && msg.AKey.token == result[0].token ) {
@@ -291,8 +331,8 @@ io.on("connection", function (socket) {
       }
     });
   });
-
   socket.on('updateKekka', function (msg) {
+*/
     /*let i;
     console.log("* * updateKekka * *");
     for (i = 0; i < msg.jikanwariData.length; i++) {
@@ -301,7 +341,7 @@ io.on("connection", function (socket) {
       console.log("koma:"      + msg.jikanwariData[i].koma);
       console.log("jyugyouId:" + msg.jikanwariData[i].jyugyouId);
     }*/
-
+/*
     db.findManyDocuments('user', {userId:msg.AKey.userId}, {projection:{_id:0}}, function (result) {
       // ログイン中のユーザにのみ回答
       if (result.length != 0 && msg.AKey.token == result[0].token ) {
@@ -453,6 +493,7 @@ io.on("connection", function (socket) {
     // ログイン直後にログアウトしたか他の端末でログインしたというエラーメッセージが表示される
     // 端末がある模様。トークンを削除しないことにする
     // ログアウトしたかどうかの判定はできなくなる
+*/
     /*
     db.findManyDocuments('user', {token:socket.id}, function (result) {
       if ( result.length != 0 ) {
@@ -462,13 +503,17 @@ io.on("connection", function (socket) {
       }
     });
     */
+/*
   });
 });
-
+*/
 //------ユーティリティメソッドe--------
 
 //------サーバ構成s--------
   app.use( express.json() ); //bodyParseだったやつ
+  app.use('/api/auth', authRouter);
+
+/*
   app.use( function ( request, response, next ) {
     // js,css更新用
     if (request.url.indexOf( '/js/' ) >= 0) {
@@ -484,7 +529,8 @@ io.on("connection", function (socket) {
     next();
   });
   app.use( express.static( __dirname + '/public' ) ); // ややはまった。これがsetwatchの設定の前にあるとだめ
-
+*/
+/*
   app.post('/api/login', function ( request, response ) {
     const userid  = request.body.userid;
     const password = request.body.password;
@@ -495,12 +541,14 @@ io.on("connection", function (socket) {
                 message : 'dummy'};
     response.json(obj);
   });
+*/
+  // publicフォルダ内のファイルをブラウザが自動で読み込めるようにする
+  app.use( express.static(path.join(__dirname, 'public')));
 
   app.get('/', function ( request, response ) {
-    console.log('request.url');
-    console.log(request.url);
+    console.log('request.url : ', request.url);
 
-    response.sendFile( __dirname +'/public/nbn.html' );
+    response.sendFile(path.join(__dirname, 'public', 'nbn.html'));
   });
 
 //------サーバ構成e--------
