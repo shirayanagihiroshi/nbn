@@ -26,11 +26,11 @@ import { createServer } from 'https';
 // 自作ライブラリのインポート
 import keys  from './lib/keys.js';
 import crypt from './lib/crypt.js';
-import db    from './lib/database.js';
 import utils from './lib/util_s.js';
 
 // expressルーターの設定
-import authRouter from './routes/auth.js';
+import authRouter  from './routes/auth.js';
+import storeRouter from './routes/store.js';
 
 // ESMモードで「__dirname」を再現するための設定
 const __filename = fileURLToPath(import.meta.url);
@@ -511,7 +511,8 @@ io.on("connection", function (socket) {
 
 //------サーバ構成s--------
   app.use( express.json() ); //bodyParseだったやつ
-  app.use('/api/auth', authRouter);
+  app.use('/api/auth',  authRouter);
+  app.use('/api/store', storeRouter);
 
 /*
   app.use( function ( request, response, next ) {

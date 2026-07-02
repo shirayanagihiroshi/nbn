@@ -86,7 +86,7 @@ class registerKamokuView extends HTMLElement {
   }
 
   // フォーカスを上下に移動させるメソッド
-  _register(matrix) {
+  async _register(matrix) {
     if (!matrix || matrix.length === 0) {
       return;
     }
@@ -113,7 +113,21 @@ class registerKamokuView extends HTMLElement {
       };
     });
 
-    console.log("変換後のオブジェクト配列:", kamokuList)
+    try {
+      // fetchの実行
+      const response = await fetch('/api/store/kamoku', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json' // JSONを送ることを明示
+        },
+        body: JSON.stringify(kamokuList)
+      });
+    } catch (error) {
+      // 通信エラー（サーバーダウン、オフラインなど）の処理
+      console.error('通信に失敗しました', error);
+    }
+
+//    console.log("変換後のオブジェクト配列:", kamokuList)
   }
 
 
