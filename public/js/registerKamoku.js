@@ -51,7 +51,7 @@ class registerKamokuView extends HTMLElement {
   /**
    * カスタム要素がページに追加されたときに呼ばれるコールバック
    */
-  connectedCallback() {
+  async connectedCallback() {
     console.log("registerKamokuView connectedCallback");
 
     // 最初にヘッダーだけは表示
@@ -83,6 +83,24 @@ class registerKamokuView extends HTMLElement {
         console.error("登録に失敗しました（権限が拒否されたなど）:", err);
       }
     });
+
+    try {
+      // fetchの実行
+      const response = await fetch('/api/fetch/kamoku', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json' // JSONを送ることを明示
+        }
+      });
+
+      // レスポンスを解析
+      const data = await response.json();
+      console.log("通信後:", data)
+
+    } catch (error) {
+      // 通信エラー（サーバーダウン、オフラインなど）の処理
+      console.error('通信に失敗しました', error);
+    }
   }
 
   // フォーカスを上下に移動させるメソッド
@@ -115,19 +133,26 @@ class registerKamokuView extends HTMLElement {
 
     try {
       // fetchの実行
-      const response = await fetch('/api/store/kamoku', {
+      const response = await fetch('/api/store/kamoku?nendo=2026&gakunen=3', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json' // JSONを送ることを明示
         },
         body: JSON.stringify(kamokuList)
       });
+
+      // レスポンスを解析
+      const data = await response.json();
+      console.log("通信後:", data)
+
     } catch (error) {
       // 通信エラー（サーバーダウン、オフラインなど）の処理
       console.error('通信に失敗しました', error);
     }
 
-//    console.log("変換後のオブジェクト配列:", kamokuList)
+    // レスポンスを解析
+//    const data = await response.json();
+//    console.log("通信後:", data)
   }
 
 

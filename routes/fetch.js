@@ -1,25 +1,30 @@
 'use strict';
 
 /**
- * routes/store.js
- * サーバ側のデータ保存処理
+ * routes/fetch.js
+ * サーバ側のデータ取得処理
  * 
  */
 import express from 'express';
 const router = express.Router();
 import db    from '../lib/database.js';
 
-// ここでは '/api/store/:resource' ではなく、子パスの '/:resource' だけを書く
-router.post('/:resource', (req, resp) => {
+// ここでは '/api/fetch/:resource' ではなく、子パスの '/:resource' だけを書く
+router.get('/:resource', (req, resp) => {
 
   const target = req.params.resource;
+  const nendo = req.query.nendo;
+  const gakunen = req.query.gakunen;
 
   console.log('*******************');
   console.log(target);
+  console.log(nendo);
+  console.log(gakunen);
 //  console.log(req.body);
 
-  db.insertManyDocuments('hnk_kamoku',
-                        req.body,
+  db.findManyDocuments('hnk_kamoku',
+                       {nendo:nendo,gakunen:gakunen},
+                       {projection:{_id:0}},
                         function (res) {
                           resp.json({ success: true, message: res });
                         });

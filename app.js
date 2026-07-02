@@ -31,6 +31,7 @@ import utils from './lib/util_s.js';
 // expressルーターの設定
 import authRouter  from './routes/auth.js';
 import storeRouter from './routes/store.js';
+import fetchRouter from './routes/fetch.js';
 
 // ESMモードで「__dirname」を再現するための設定
 const __filename = fileURLToPath(import.meta.url);
@@ -513,6 +514,7 @@ io.on("connection", function (socket) {
   app.use( express.json() ); //bodyParseだったやつ
   app.use('/api/auth',  authRouter);
   app.use('/api/store', storeRouter);
+  app.use('/api/fetch', fetchRouter);
 
 /*
   app.use( function ( request, response, next ) {
