@@ -10,19 +10,31 @@ const router = express.Router();
 import db    from '../lib/database.js';
 
 // ここでは '/api/store/:resource' ではなく、子パスの '/:resource' だけを書く
-router.post('/:resource', (req, resp) => {
+router.post('/:resource', (req, response) => {
 
   const target = req.params.resource;
 
   console.log('*******************');
   console.log(target);
-//  console.log(req.body);
+//  console.log(req.body.contents);
 
-  db.insertManyDocuments('hnk_kamoku',
-                        req.body,
-                        function (res) {
-                          resp.json({ success: true, message: res });
-                        });
+  switch (target) {
+    case 'ks_kamoku':
+      // この年度のデータをすべて削除してから登録する。
+      db.deleteManyDocuments('ks_kamoku',
+                             {nendo : req.body.nendo},
+                             function (resp) {
+                               db.insertManyDocuments('ks_kamoku',
+                                                      req.body.contents,
+                                                      function (res) {
+                                                        response.json({ success: true, message: res });
+                                                      });
+                             });
+    break;
+
+    default:
+    break;
+  }
 
 //  res.json({ success: true, message: "dummy" });
 });

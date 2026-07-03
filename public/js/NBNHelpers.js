@@ -142,3 +142,20 @@ export function NBNrenderTable(matrix, cellConfigFn) {
   html += '</table>';
   return html;
 }
+
+
+/**
+ * 昨年、今年、来年のリストのHTLMを返す関数
+ * @param {}
+ */
+export function NBNGetYearsList() {
+  const today = new Date();  // 今日の日付データを作る
+  const thisYear = today.getFullYear(); // 今年（4桁の西暦）を取得
+  const lastYear = thisYear - 1; // 今年 - 1 で昨年を取得
+  const nextYear = thisYear + 1; // 今年 + 1 で来年を取得
+
+  let str = '<option value="' + String(lastYear) + '">' + String(lastYear) + '</option>';
+  str += '<option value="' + String(thisYear) + '" selected>' + String(thisYear) + '</option>';
+  str += '<option value="' + String(nextYear) + '">' + String(nextYear) + '</option>';
+  return str;
+}

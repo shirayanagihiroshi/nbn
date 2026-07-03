@@ -13,21 +13,25 @@ import db    from '../lib/database.js';
 router.get('/:resource', (req, resp) => {
 
   const target = req.params.resource;
-  const nendo = req.query.nendo;
-  const gakunen = req.query.gakunen;
 
-  console.log('*******************');
-  console.log(target);
-  console.log(nendo);
-  console.log(gakunen);
-//  console.log(req.body);
+//  console.log('*******************');
+//  console.log(target);
 
-  db.findManyDocuments('hnk_kamoku',
-                       {nendo:nendo,gakunen:gakunen},
-                       {projection:{_id:0}},
-                        function (res) {
-                          resp.json({ success: true, message: res });
-                        });
+  switch (target) {
+    case 'ks_kamoku':
+      const nendo = parseInt(req.query.nendo);
+      const gakunen = parseInt(req.query.gakunen);
+      db.findManyDocuments('ks_kamoku',
+                           {nendo:nendo,gakunen:gakunen},
+                           {projection:{_id:0}},
+                           function (res) {
+                             resp.json({ success: true, contents: res });
+                           });
+    break;
+
+    default:
+    break;
+  }
 
 //  res.json({ success: true, message: "dummy" });
 });

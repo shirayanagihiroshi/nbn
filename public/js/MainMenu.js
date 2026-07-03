@@ -33,6 +33,7 @@ class MainMenu extends HTMLElement {
           <li><a href="/select-input-target">成績入力</a></li>
           <li><a href="/settings">setting</a></li>
           <li><a href="/register-kamoku">registerKamoku</a></li>
+          <li><a href="/register-tantou">registerTantou</a></li>
           <li><a id="closemenu" href="/closemenu">メニューを閉じる</a></li>
         </ul>
       </div>
