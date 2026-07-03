@@ -19,7 +19,7 @@ class registerKamokuView extends HTMLElement {
     super();
     this.attachShadow({ mode: 'open' });
     this._matrix = null; //下記のヘッダー以外のデータ部を保持
-    this.tableHeader = [['科目ID', '科目名', '学年', '前期', '後期', '5段階', 'sortNo']];
+    this._tableHeader = [['科目ID', '科目名', '学年', '前期', '後期', '5段階', 'sortNo']];
     this.shadowRoot.innerHTML = `
       <style>
       </style>
@@ -43,24 +43,22 @@ class registerKamokuView extends HTMLElement {
   async connectedCallback() {
     console.log("registerKamokuView connectedCallback");
 
-    let obj = this.shadowRoot.getElementById('targetNendo');
-    obj.innerHTML = NBNGetYearsList();
+    const nendoObj = this.shadowRoot.getElementById('targetNendo');
+    nendoObj.innerHTML = NBNGetYearsList();
 
     // 最初にヘッダーだけは表示
-    obj = this.shadowRoot.getElementById('kamokuTable');
-    obj.innerHTML = NBNrenderTable( this.tableHeader );
+    const tableObj = this.shadowRoot.getElementById('kamokuTable');
+    tableObj.innerHTML = NBNrenderTable( this._tableHeader );
 
-    let pastebtn = this.shadowRoot.getElementById('paste-btn');
+    const pastebtn = this.shadowRoot.getElementById('paste-btn');
     pastebtn.addEventListener('click', async () => {
       try {
         // クリップボードからテキストを読み取る（ブラウザが許可を求めるポップアップを出します）
         const pastedText = await navigator.clipboard.readText();
  
-        const obj = this.shadowRoot.getElementById('kamokuTable');
-
         this._matrix = NBNParseExcelData( NBNZenkaku2hankaku(pastedText));
         // ヘッダーと入力表をつけて表示
-        obj.innerHTML = NBNrenderTable( NBNconbineMatrixVertical(this.tableHeader, this._matrix));
+        tableObj.innerHTML = NBNrenderTable( NBNconbineMatrixVertical(this._tableHeader, this._matrix));
 
       } catch (err) {
         console.error("クリップボードの読み込みに失敗しました（権限が拒否されたなど）:", err);
