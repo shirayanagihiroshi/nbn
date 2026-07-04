@@ -89,7 +89,7 @@ export function NBNconbineMatrixVertical(matrixUpper, matrixLower) {
 }
 
 /**
- * 二次元配列のs列目からt列目までで、かつu行目以降を切り出すメソッド
+ * 二次元配列のj列目からk列目までで、かつi行目以降を切り出すメソッド
  * @param {string[][]} matrix 切り出す元の表
  * @param {number} i 切り出す行(ここ以降) これ以降欲しい　(0スタート)
  * @param {number} j 切り出す列(start) ここから欲しい　(0スタート)
@@ -132,7 +132,8 @@ export function NBNrenderTable(matrix, cellConfigFn) {
         if (config.isEditable) {
           html += `<td class="editable-cell" contenteditable="true">${cell}</td>`;
         } else {
-          html += `<td>${cell}</td>`;
+          html += `<td>${cell}</td>`; // テンプレートリテラルは「中身が何であれ、強制的に文字列に変換して埋め込む
+                                      // 配列ならjavascriptがカンマ区切りにしてくれる
         }
       }
     });
@@ -163,7 +164,8 @@ export function NBNGetYearsList() {
 /**
  * 略称から教員IDを返す
  * 担当が複数人いるときは/で区切る。outputは配列になる
- * @param {}
+ * @param {string[][]} matrix 略称が記載された表
+ * @param {object[]}   list   teacherIDとryakusyouをもつオブジェクトの配列
  */
 export function NBNGetTeacherIDFromRyakusyou(matrix, list) {
 let i, j, templst;
@@ -175,15 +177,15 @@ let i, j, templst;
       if (matrix[i][j] == null || matrix[i][j].length == 0) {
         templst.push("");
       } else {
-        // 1. セルの文字列（例: "佐藤A/佐藤B"）を「/」で分解して配列にする ➡ ["佐藤A", "佐藤B"]
-        // 担当が一人だけのときも、要素が一つの配列になるので同じロジックでOK
+        // 1. セルの文字列（例: "浜松A/浜松B"）を「/」で分解して配列にする ➡ ["浜松A", "浜松B"]
+        // 担当が一人だけのときも、要素が一つの配列が返るので同じロジックでOK
         const ryakusyouArray = matrix[i][j].split('/');
         // 2. 分解したそれぞれの名前を、IDに変換する
         const idArray = ryakusyouArray.map(name => {
           // 前後の余計なスペース（全角半角）を削っておくお守り（trim）を入れておくと安全です
           const cleanName = name.trim(); 
           const t = list.find(obj => obj.ryakusyou == cleanName);
-          return t ? t.teacherID : cleanName; // マスタにあればID、なければ元の名前
+          return t ? t.teacherID : cleanName; // 変換リストにあればID、なければ元の名前
         });
         templst.push(idArray);
       }
