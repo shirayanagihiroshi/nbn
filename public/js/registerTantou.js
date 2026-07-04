@@ -5,7 +5,11 @@ import {
   NBNconbineMatrixVertical,
   NBNextracteMatrix,
   NBNrenderTable,
-  NBNGetYearsList } from './NBNHelpers.js';
+  NBNGetYearsList,
+  NBNGetTeacherIDFromRyakusyou } from './NBNHelpers.js';
+
+import {
+  name2TeacherID } from './name2teacherID.js';
 
 /*
  * registerTantou.js
@@ -79,7 +83,19 @@ class registerTantouView extends HTMLElement {
       this._AddTableHeader(nendo, gakunen);
     });
 
-    // ボタンへテーブルへの追記処理の登録 同じような処理を3回繰り返す
+    const registerbtn = this.shadowRoot.getElementById('register-btn');
+    registerbtn.addEventListener('click', async () => {
+      try {
+        this._register(this._sortedKamokuList,
+                       this._matrixTantou,
+                       this._matrixMeibo,
+                       this._matrixTanni);
+      } catch (err) {
+        console.error("登録に失敗しました（権限が拒否されたなど）:", err);
+      }
+    });
+
+    // ペーストのボタンは３つ。似たようなテーブルへの追記処理の登録を3回繰り返す
     const pastebtnTantou = this.shadowRoot.getElementById('paste-btn-tantou');
     pastebtnTantou.addEventListener('click', async () => {
       try {
@@ -87,6 +103,8 @@ class registerTantouView extends HTMLElement {
         const pastedText = await navigator.clipboard.readText(); 
         const objTantou = this.shadowRoot.getElementById('kamokuTantouTable');
         this._matrixTantou = NBNParseExcelData( NBNZenkaku2hankaku(pastedText));
+        // 担当だけ、入力値そのままでなく、入力値の略称から教員IDに変換する　担当教員の一覧を作成するオペレーションを含め要検討
+        this._matrixTantou = NBNGetTeacherIDFromRyakusyou(this._matrixTantou, name2TeacherID)
         // ヘッダーと入力表をつけて表示
         objTantou.innerHTML = NBNrenderTable( NBNconbineMatrixVertical(this._tableHeader, this._matrixTantou));
 
@@ -168,7 +186,8 @@ class registerTantouView extends HTMLElement {
   }
 
   // 登録処理
-  async _register(matrix) {
+  async _register(kamokuList, matrixTantou, matrixMeibo, matrixTanni) {
+    
   }
 
 

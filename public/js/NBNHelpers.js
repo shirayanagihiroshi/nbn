@@ -159,3 +159,37 @@ export function NBNGetYearsList() {
   str += '<option value="' + String(nextYear) + '">' + String(nextYear) + '</option>';
   return str;
 }
+
+/**
+ * 略称から教員IDを返す
+ * 担当が複数人いるときは/で区切る。outputは配列になる
+ * @param {}
+ */
+export function NBNGetTeacherIDFromRyakusyou(matrix, list) {
+let i, j, templst;
+  let OutputMatrix = [];
+
+  for (i = 0; i < matrix.length; i++) {
+    templst = [];
+    for (j = 0; j < matrix[0].length; j++) {
+      if (matrix[i][j] == null || matrix[i][j].length == 0) {
+        templst.push("");
+      } else {
+        // 1. セルの文字列（例: "佐藤A/佐藤B"）を「/」で分解して配列にする ➡ ["佐藤A", "佐藤B"]
+        // 担当が一人だけのときも、要素が一つの配列になるので同じロジックでOK
+        const ryakusyouArray = matrix[i][j].split('/');
+        // 2. 分解したそれぞれの名前を、IDに変換する
+        const idArray = ryakusyouArray.map(name => {
+          // 前後の余計なスペース（全角半角）を削っておくお守り（trim）を入れておくと安全です
+          const cleanName = name.trim(); 
+          const t = list.find(obj => obj.ryakusyou == cleanName);
+          return t ? t.teacherID : cleanName; // マスタにあればID、なければ元の名前
+        });
+        templst.push(idArray);
+      }
+    }
+    OutputMatrix.push(templst);
+  }
+  return OutputMatrix;
+}
+
