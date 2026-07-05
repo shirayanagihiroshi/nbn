@@ -33,11 +33,12 @@ router.post('/:resource', (req, response) => {
     break;
 
     case 'ks_master':
+      // この年度のデータをすべて削除してから登録する。
       db.deleteManyDocuments('ks_master', { nendo: req.body.nendo }, (deleteResp) => {
         db.insertManyDocuments('ks_master', req.body.contents, (insertRes) => {
           response.json({ success: true, message: "マスターを更新しました", data: insertRes });
+        });
       });
-    });
     break;
 
     default:
