@@ -195,3 +195,63 @@ let i, j, templst;
   return OutputMatrix;
 }
 
+
+/**
+ * 名簿情報文字列をオブジェクトに変換する
+ * 学年は中1:1,中2:2,中3:3,高1:4,高2:5,高3:6
+ * 例："3-1"
+ *      =>{  gakunen: 6,
+ *           cls: 1,
+ *           kongoumeibo: null
+ *        }
+ * 例：1
+ *      =>{  gakunen: null,
+ *           cls: null,
+ *           kongoumeibo: 1
+ *        }
+ * @param {string[][]} matrix 名簿情報文字列が記載された表
+ */
+export function NBNGetClsInfoFromClsStr(matrix) {
+  if (!matrix || matrix.length === 0) return [];
+
+  let i, j;
+  let templst = [];
+  let OutputMatrix = [];
+
+  for (i = 0; i < matrix.length; i++) {
+    templst = [];
+    for (j = 0; j < matrix[0].length; j++) {
+      const cell = matrix[i][j];
+
+      // 1. 基本となるすべて null のオブジェクトを用意
+      let meiboObj = {
+        gakunen: null,
+        cls: null,
+        kongoumeibo: null
+      };
+
+      // 2. セルが空（null, undefined, 空文字）の場合は、すべてnullのままプッシュ
+      if (cell === null || cell === undefined || String(cell).trim() === "") {
+        templst.push(meiboObj);
+      } else {
+        // 文字列かつハイフン「-」が含まれる場合は「通常のクラス（例: "3-1"）」
+        if (typeof cell === 'string' && cell.includes('-')) {
+          const parts = cell.split('-');
+          const rawGakunen = parseInt(parts[0], 10); // 3
+          const rawCls     = parseInt(parts[1], 10); // 1
+
+          // 現状高校のみ対応（高1=4, 高2=5, 高3=6）
+          meiboObj.gakunen = rawGakunen + 3; 
+          meiboObj.cls = rawCls;
+        } else {
+          // ハイフンがない、または数値の場合は「混合名簿ID」とみなす
+          meiboObj.kongoumeibo = Number(cell);
+        }
+        
+        templst.push(meiboObj);
+      }
+    }
+    OutputMatrix.push(templst);
+  }
+  return OutputMatrix;
+}

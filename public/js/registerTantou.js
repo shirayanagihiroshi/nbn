@@ -6,7 +6,8 @@ import {
   NBNextracteMatrix,
   NBNrenderTable,
   NBNGetYearsList,
-  NBNGetTeacherIDFromRyakusyou } from './NBNHelpers.js';
+  NBNGetTeacherIDFromRyakusyou,
+  NBNGetClsInfoFromClsStr } from './NBNHelpers.js';
 
 import {
   name2TeacherID } from './name2teacherID.js';
@@ -185,11 +186,81 @@ class registerTantouView extends HTMLElement {
 
   }
 
-  // 登録処理
+  /**
+   * マスターデータを登録・更新する関数
+   * @param {Array} kamokuList - 科目オブジェクトの配列（sortNo順にソート済みを想定）
+   * @param {Array} matrixTantou - 縦:教員 / 横:科目の2次元配列（中身は教員IDの配列）
+   * @param {Array} matrixMeibo - 縦:クラス / 横:科目の2次元配列（中身はクラス名文字列、または混合名簿ID）
+   * @param {Array} matrixTanni - 縦:単位数 / 横:科目の2次元配列（中身は数値または数値文字列）
+   */
   async _register(kamokuList, matrixTantou, matrixMeibo, matrixTanni) {
-    
-  }
+    try {
+      // 事前に名簿マトリクスをオブジェクト形式の2次元配列に一括変換する！
+      const formattedMeiboMatrix = NBNGetClsInfoFromClsStr(matrixMeibo);
+      // 最終的にMongoDBに保存するマスターデータの配列
+      const masterRecords = [];
+  
+      // 入力マトリクスの「行（縦）」の数を取得（どれも同じ行数である想定）
+      const rowCount = matrixTantou.length;
+      // 「列（横 = 科目の数）」を取得
+      const colCount = kamokuList.length;
+  
+      // 1行ずつループ（縦方向）
+      for (let i = 0; i < rowCount; i++) {
+        // 1列ずつループ（横方向 = 科目ごと）
+        for (let j = 0; j < colCount; j++) {
+          
+          // 現在のセルに対応する「科目情報」をリストから取得
+          const currentKamoku = kamokuList[j];
+          
+          // 3つのマトリクスから、同じ位置（行i、列j）のデータをピンポイントで抽出
+          const teachers = matrixTantou[i][j]; // 教員IDの配列
+          const meiboObj = formattedMeiboMatrix[i][j];   // クラス名（"3-1"など）または 混合名簿ID
+          const tanni    = matrixTanni[i][j];   // 単位数
 
+          // 担当教員の指定を信じる。そこが未入力ならスキップ（登録しない）
+          const isTeachersEmpty = !teachers || teachers.length === 0 || teachers[0] === "";
+          //const isMeiboEmpty = !meiboObj.gakunen && !meiboObj.cls && !meiboObj.kongoumeibo;
+          //const isTanniEmpty = tanni === null || tanni === undefined || tanni === "";
+
+          if (isTeachersEmpty /*&& isMeiboEmpty && isTanniEmpty*/) {
+            continue;
+          }
+  
+          // マスターデータの「1行分（1ドキュメント）」を組み立てる
+          const record = {
+            nendo: currentKamoku.nendo,             // 科目マスタから年度を引き継ぐ
+            kamokuId: currentKamoku.kamokuId,       // 科目ID
+            kamokuName: currentKamoku.kamokuName,   // 科目名（画面表示等で便利なので持たせる）
+            teachers: Array.isArray(teachers) ? teachers : [teachers], // 確実に教員IDの配列にする
+            meiboInfo: meiboObj,                    // 名簿情報オブジェクトをそのまま格納
+            tanni: tanni !== "" ? Number(tanni) : 0 // 単位数は数値型にキャストしておく
+          };
+
+          masterRecords.push(record);
+        }
+      }
+
+      console.log(`組み立て完了: ${masterRecords.length} 件のマスターデータを登録します。`);
+      console.log(masterRecords);
+
+      const currentNendo = kamokuList[0]?.nendo;
+      const response = await fetch('/api/store/ks_master', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nendo: currentNendo,
+          contents: masterRecords // サーバー側はこの contents を insertMany するだけ
+        })
+      });
+
+      const result = await response.json();
+      console.log("マスター登録結果:", result);
+
+    } catch (error) {
+      console.error("マスター登録処理でエラーが発生しました:", error);
+    }
+  }
 
 }
 // 定義名は、全て小文字(a-z)で、ハイフンが1つ以上含まれないとダメ。
