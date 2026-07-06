@@ -108,7 +108,6 @@ router.get('/:resource', async (req, resp) => {
         console.error("データ取得・整形エラー:", error);
         resp.status(500).json({ success: false, message: "データ処理に失敗しました" });
       }
-    });
     break;
 
     default:
