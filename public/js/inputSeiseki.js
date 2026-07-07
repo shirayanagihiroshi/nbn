@@ -162,7 +162,7 @@ class inputSeisekiView extends HTMLElement {
         s.cls,
         s.bangou,
         s.name,
-        s.zenki.hyouka ?? "",
+        s.zenki.hyouka ?? "", // Nullish Coalescing演算子 (??) 左がnullなら右を適用
         s.zenki.kanten.join('') ?? "", // 配列を文字列（"AAA"等）に戻す
         s.zenki.kekka ?? 0,
         s.kouki.hyouka ?? "",
