@@ -10,7 +10,7 @@ const router = express.Router();
 import db    from '../lib/database.js';
 
 // ここでは '/api/store/:resource' ではなく、子パスの '/:resource' だけを書く
-router.post('/:resource', (req, response) => {
+router.post('/:resource', async (req, response) => {
 
   const target = req.params.resource;
 
@@ -20,25 +20,29 @@ router.post('/:resource', (req, response) => {
 
   switch (target) {
     case 'ks_kamoku':
-      // この年度のデータをすべて削除してから登録する。
-      db.deleteManyDocuments('ks_kamoku',
-                             {nendo : req.body.nendo},
-                             function (resp) {
-                               db.insertManyDocuments('ks_kamoku',
-                                                      req.body.contents,
-                                                      function (res) {
-                                                        response.json({ success: true, message: res });
-                                                      });
-                             });
+      try {
+        // 1. この年度のデータをすべて削除（結果を待つ）
+        await db.deleteManyDocuments('ks_kamoku', { nendo: req.body.nendo });
+        // 2. 新しいコンテンツを一括登録（結果を待つ）
+        const insertRes = await db.insertManyDocuments('ks_kamoku', req.body.contents);
+        // 3. 正常終了のレスポンスを返す
+        response.json({ success: true, message: "科目を更新しました", data: insertRes });
+      } catch (error) {
+        // どこかでエラーが起きた場合の安全対策
+        console.error("データ更新エラー:", error);
+        response.status(500).json({ success: false, message: "データの更新に失敗しました" });
+      }
     break;
 
     case 'ks_master':
-      // この年度のデータをすべて削除してから登録する。
-      db.deleteManyDocuments('ks_master', { nendo: req.body.nendo }, (deleteResp) => {
-        db.insertManyDocuments('ks_master', req.body.contents, (insertRes) => {
-          response.json({ success: true, message: "マスターを更新しました", data: insertRes });
-        });
-      });
+      try {
+        await db.deleteManyDocuments('ks_master', { nendo: req.body.nendo });
+        const insertRes = await db.insertManyDocuments('ks_master', req.body.contents);
+        response.json({ success: true, message: "マスターを更新しました", data: insertRes });
+      } catch (error) {
+        console.error("データ更新エラー:", error);
+        response.status(500).json({ success: false, message: "データの更新に失敗しました" });
+      }
     break;
 
     default:

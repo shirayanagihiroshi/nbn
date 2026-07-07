@@ -151,10 +151,7 @@ class registerTantouView extends HTMLElement {
     try {
       // fetchの実行
       const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json' // JSONを送ることを明示
-        }
+        method: 'GET'
       });
 
       // レスポンスを解析

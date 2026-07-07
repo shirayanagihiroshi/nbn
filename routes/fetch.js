@@ -18,25 +18,30 @@ router.get('/:resource', async (req, resp) => {
 //  console.log(target);
 
   switch (target) {
-    case 'ks_kamoku':
+    case 'ks_kamoku': {
       const nendo = parseInt(req.query.nendo);
       const gakunen = parseInt(req.query.gakunen);
-      db.findManyDocuments('ks_kamoku',
-                           {nendo:nendo,gakunen:gakunen},
-                           {projection:{_id:0}},
-                           function (res) {
-                             resp.json({ success: true, contents: res });
-                           });
-    break;
+      const res = await db.findManyDocuments('ks_kamoku',
+                                             {nendo:nendo,gakunen:gakunen},
+                                             {projection:{_id:0}});
+      resp.json({ success: true, contents: res });
+      break;
+    }
 
-    case 'input-sheet':
+    case 'ks_manage': {
+      resp.json({ success: true, nendo: 2026, period: "zenki" });
+      break;
+    }
 
-      const teacherId = req.params.teacherId;
+    case 'input-sheet':{
+
+      const teacherId = req.query.teacherId;
+      const nendo = parseInt(req.query.nendo);
 
       try {
         // 1. コールバックを使わず、直接 await で結果を受け取る！
         // 第3引数（outputFieldObj）にはプロジェクションを渡します
-        const masterRecords = await db.findManyDocuments('ks_master', { teachers: teacherId }, { projection: { _id: 0 } });
+        const masterRecords = await db.findManyDocuments('ks_master', { teachers: teacherId, nendo: nendo }, { projection: { _id: 0 } });
 
         if (!masterRecords || masterRecords.length === 0) {
           return resp.json({ success: true, message: "担当科目がありません", data: [] });
@@ -49,7 +54,7 @@ router.get('/:resource', async (req, resp) => {
           // 2. 名簿データの引き当て
           if (record.meiboInfo.kongoumeibo !== null) {
             // 混合名簿コレクションから検索
-            const kongouDataList = await db.findManyDocuments('kongoumeibo', { kongouMeiboId: record.meiboInfo.kongoumeibo }, { projection: { _id: 0 } });
+            const kongouDataList = await db.findManyDocuments('goudouMeibo', { kongouMeiboId: record.meiboInfo.kongoumeibo }, { projection: { _id: 0 } });
             const kongouData = kongouDataList[0]; // 配列の先頭を取得
             rawStudents = kongouData ? kongouData.students : [];
           } else {
@@ -108,7 +113,8 @@ router.get('/:resource', async (req, resp) => {
         console.error("データ取得・整形エラー:", error);
         resp.status(500).json({ success: false, message: "データ処理に失敗しました" });
       }
-    break;
+      break;
+    }
 
     default:
     break;

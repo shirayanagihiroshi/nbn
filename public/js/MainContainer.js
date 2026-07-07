@@ -1,6 +1,7 @@
 import './home.js';
 import './settings.js';
 import './selectInputTarget.js';
+import './inputSeiseki.js';
 import './registerKamoku.js';
 import './registerTantou.js';
 
