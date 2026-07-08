@@ -153,6 +153,26 @@ class inputSeisekiView extends HTMLElement {
     let pastebtn = this.shadowRoot.getElementById('paste-btn');
     pastebtn.addEventListener('click', async () => {
       try {
+        // 1. 共通確認ダイアログを取得
+        const dialog = this._findConfirmDialog();
+
+        if (dialog) {
+          // 2. 注意を促すダイアログを表示
+          const action = await dialog.show({
+            title: '貼り付け前の確認',
+            message: 'クリップボードの内容を、現在表示されている入力枠に上書き貼り付けします。\n既存の入力内容は書き換わりますが、よろしいですか？',
+            buttons: [
+              { label: 'OK', onClickFunc: 'ok' },
+              { label: 'キャンセル', onClickFunc: 'cancel' }
+            ]
+          });
+
+          // ユーザーが「OK」を押さなかった（キャンセルや閉じた）場合は処理を中断
+          if (action !== 'ok') {
+            return;
+          }
+        }
+
         const pastedText = await navigator.clipboard.readText();
         const parsedMatrix = NBNParseExcelData(NBNZenkaku2hankaku(pastedText));
         
@@ -209,6 +229,9 @@ class inputSeisekiView extends HTMLElement {
    */
   async _loadInitialData() {
     try {
+      // 1. 再読み込み前に「現在選択している科目のID」を記憶しておく
+      const currentSelectedId = this.currentKamokuData ? this.currentKamokuData.kamokuId : null;
+
       // 本来は管理コレクションの設定を返すAPI
       // 例: { nendo: 2026, period: "zenki" } が返ってくるとする
       const configRes = await fetch('/api/fetch/ks_manage'); // 指定なしのときは method: 'GET'
@@ -221,9 +244,18 @@ class inputSeisekiView extends HTMLElement {
       const result = await dataRes.json();
 
       if (result.success && result.data.length > 0) {
+
         // 全科目リストを保持し、サイドバーを描画する
         this.myKamokuList = result.data;
-        this.currentKamokuData = result.data[0]; // 1件目を初期選択
+
+        // 2. 直前に選択していた科目が新しいデータ一覧の中に存在するか探す
+        let matchedKamoku = null;
+        if (currentSelectedId) {
+          matchedKamoku = this.myKamokuList.find(k => k.kamokuId === currentSelectedId);
+        }
+
+        // 3. 見つかればその科目を維持、見つからなければ（初回表示時など）1件目を初期選択にする
+        this.currentKamokuData = matchedKamoku ? matchedKamoku : this.myKamokuList[0];
 
         this._renderKamokuList(); // サイドバーの描画
 
@@ -259,6 +291,7 @@ class inputSeisekiView extends HTMLElement {
     // 生徒データの流し込み
     this.currentKamokuData.students.forEach(s => {
       matrix.push([
+//        s.gakunen - 3, // 表示だけデータベース内部の値を見慣れた形に直す
         s.gakunen,
         s.cls,
         s.bangou,
@@ -306,7 +339,7 @@ class inputSeisekiView extends HTMLElement {
 
       // 1行目：表の見出し
       if (rowIndex === 1) {
-        return { isEditable: false, isHeader: true };
+        return { isEditable: false, isHeader: true ,className: 'table-title-cell' };
       }
 
       // 2行目以降（生徒データ行）：編集可能セルの判定
@@ -584,6 +617,7 @@ class inputSeisekiView extends HTMLElement {
         li.classList.add('selected');
       }
 
+//      li.textContent = `${kamoku.gakunen-3}年 ${kamoku.kamokuName}`; //学年は見た目だけ、データベース内部の値を見慣れた形に直す
       li.textContent = `${kamoku.gakunen}年 ${kamoku.kamokuName}`;
 
       // 科目をクリックしたときの切り替えイベント
