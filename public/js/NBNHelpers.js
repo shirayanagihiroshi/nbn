@@ -106,7 +106,11 @@ export function NBNextracteMatrix(matrix, i, j, k) {
 /**
  * 二次元配列をhtmlのtableへ変換する高度な共通関数
  * @param {Array} matrix 二次元配列
- * @param {Function} cellConfigFn 各セルの設定を決める関数 (row, col, value) => { isEditable: boolean }
+ * @param {Function} cellConfigFn 各セルの設定を決める関数
+ * (row, col, value) => { isHeader   : true,           // <th> タグで出力する
+ *                        colspan    : 11,
+ *                        isEditable : false, 
+ *                        className  : 'header-style' // 任意でクラスも指定可
  * @return {string} HTML文字列
  */
 export function NBNrenderTable(matrix, cellConfigFn) {
@@ -114,30 +118,48 @@ export function NBNrenderTable(matrix, cellConfigFn) {
 
   let html = '<table>';
   matrix.forEach((row, rowIndex) => {
-    html += '<tr>';
-    row.forEach((cell, colIndex) => {
-      if (rowIndex === 0) {
-        html += `<th>${cell}</th>`;
-      } else {
-        // 与えられたルール関数に「現在の行・列・値」を投げて判断を仰ぐ。以下のように使う
-        //
-        // const html = NBNrenderTable(this.scoreData, (rowIndex, colIndex, value) => {
-        //   「4列目（colIndex===3）かつ 管理期間内（canEdit）」というルールをその場で定義して渡す
-        //    return {
-        //      isEditable: (colIndex === 3 && canEdit)
-        //    };
-        // });
-        const config = cellConfigFn ? cellConfigFn(rowIndex, colIndex, cell) : { isEditable: false };
-        
-        if (config.isEditable) {
-          html += `<td class="editable-cell" contenteditable="true">${cell}</td>`;
-        } else {
-          html += `<td>${cell}</td>`; // テンプレートリテラルは「中身が何であれ、強制的に文字列に変換して埋め込む
-                                      // 配列ならjavascriptがカンマ区切りにしてくれる
-        }
-      }
-    });
     
+    // 行(tr)全体の判定: colIndex = -1 としてコールバックを一度呼び出して行用の設定を取る
+    const rowConfig = cellConfigFn ? cellConfigFn(rowIndex, -1, null) : {};
+    const trClassAttr = rowConfig.rowClassName ? ` class="${rowConfig.rowClassName}"` : '';
+
+    html += `<tr${trClassAttr}>`;
+
+    let skipCount = 0;
+
+    row.forEach((cell, colIndex) => {
+      // colspan による結合領域のセル描画をスキップ
+      if (skipCount > 0) {
+        skipCount--;
+        return;
+      }
+
+      // 各セル(td/th)ごとの設定を取得
+      const config = cellConfigFn ? cellConfigFn(rowIndex, colIndex, cell) : {};
+
+      const isEditable = config.isEditable || false;
+      const colspan = config.colspan || 1;
+
+      // HTML属性の組み立て
+      const colspanAttr = colspan > 1 ? ` colspan="${colspan}"` : '';
+      
+      if (colspan > 1) {
+        skipCount = colspan - 1;
+      }
+
+      // セル側のクラス組み立て
+      const classList = [];
+      if (isEditable) classList.push('editable-cell');
+      if (config.className) classList.push(config.className);
+      
+      const classAttr = classList.length > 0 ? ` class="${classList.join(' ')}"` : '';
+      const contentEditable = isEditable ? ' contenteditable="true"' : '';
+
+      // タグの判定と出力
+      const tag = config.isHeader ? 'th' : 'td';
+      html += `<${tag}${classAttr}${contentEditable}${colspanAttr}>${cell}</${tag}>`;
+    });
+
     html += '</tr>';
   });
   html += '</table>';

@@ -12,21 +12,103 @@ class inputSeisekiView extends HTMLElement {
     this.attachShadow({ mode: 'open' });
     this.shadowRoot.innerHTML = `
       <style>
-        h1 { font-family: sans-serif; color: #333; margin-bottom: 5px; }
+        :host {
+          display: block;
+          width: 100%;
+        }
+
+        /* 左右分割のレイアウト */
+        .container {
+          display: flex;
+          gap: 20px;
+          padding: 10px;
+          align-items: flex-start; /* 左メニューと右テーブルの上が揃うように */
+        }
+
+        /* 左：科目リストのスタイル */
+        .sidebar {
+          width: 220px;
+          flex-shrink: 0;
+          border-right: 2px solid #ccc;
+          padding-right: 15px;
+        }
+        .sidebar h3 {
+          margin-top: 0;
+          font-size: 16px;
+          border-bottom: 2px solid #333;
+          padding-bottom: 5px;
+        }
+        .kamoku-list {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+        }
+        .kamoku-item {
+          padding: 10px 12px;
+          margin-bottom: 8px;
+          background-color: #f5f5f5;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          cursor: pointer;
+          transition: background-color 0.2s;
+        }
+        .kamoku-item:hover {
+          background-color: #e0e0e0;
+        }
+        /* 選択中の科目を強調表示 */
+        .kamoku-item.selected {
+          background-color: #007bff;
+          color: white;
+          font-weight: bold;
+          border-color: #0056b3;
+        }
+
+        /* 右：成績テーブル表示エリア */
+        .main-content {
+          flex-grow: 1;
+          overflow-x: auto;
+        }
+
+        h1 { font-family: sans-serif; color: #333; margin-top: 0; margin-bottom: 5px; }
         .info-bar { margin-bottom: 15px; color: #555; font-size: 14px; }
-        .seiseki { border-collapse: collapse; margin-top: 20px; width: 100%; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .seiseki { border-collapse: collapse; margin-top: 15px; width: 100%; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .seiseki th, .seiseki td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-        .seiseki tr:first-child, .seiseki tr:nth-child(2) { background-color: #f2f2f2; font-weight: bold; }
-        
-        .editable-cell {
-          background-color: #fffde7;
+
+        /* 科目タイトル行（0行目） */
+        .seiseki th.table-title-cell {
+          background-color: #2c3e50;
+          color: white;
+          font-size: 16px;
+          font-weight: bold;
+          text-align: left;
+          padding: 10px;
+        }
+        /* ==========================================
+         * セル背景色（しましま ＆ 編集可/不可の掛け合わせ）
+         * ========================================== */
+        /* 1. 通常グループ（白グループ）：編集不能セル */
+        .seiseki td {
+          background-color: #ffffff;
+        }
+        /* 2. 通常グループ（白グループ）：編集可能セル */
+        .seiseki td.editable-cell {
+          background-color: #fffde7; /* 淡いクリーム色 */
           cursor: text;
         }
-        .editable-cell:focus {
-          outline: 2px solid #2196F3;
-          background-color: #fff;
+        /* 3. 縞グループ（5行ごとのグレーグループ）：編集不能セル */
+        .seiseki tr.stripe-group td {
+          background-color: #f2f4f7; /* うすいグレー */
         }
-        
+        /* 4. 縞グループ（5行ごとのグレーグループ）：編集可能セル */
+        .seiseki tr.stripe-group td.editable-cell {
+          background-color: #fef9c3; /* 少し濃いクリーム色 */
+        }
+        /* 5. フォーカス（入力中）時の強調（共通） */
+        .seiseki .editable-cell:focus {
+          outline: 2px solid #2196F3;
+          background-color: #ffffff !important; /* 入力中のマスは真っ白にして視認性を高める */
+        }
+
         .btn-container { margin-top: 15px; }
         button { padding: 8px 16px; cursor: pointer; font-weight: bold; border-radius: 4px; border: 1px solid #ccc; margin-right: 10px; }
         #register-btn { background-color: #4CAF50; color: white; border: none; }
@@ -34,20 +116,31 @@ class inputSeisekiView extends HTMLElement {
         #paste-btn { background-color: #2196F3; color: white; border: none; }
         #paste-btn:hover { background-color: #0b7dda; }
       </style>
-      <h1>成績入力画面</h1>
-      <div class="info-bar" id="infoBar">データを読み込み中...</div>
-      <div class="btn-container">
-        <button id="paste-btn">Excelからペースト</button>
-        <button id="register-btn">登録（サーバーへ保存）</button>
+      <div class="container">
+        <div class="sidebar">
+          <h3>担当科目一覧</h3>
+          <ul id="kamokuList" class="kamoku-list"></ul>
+        </div>
+
+        <div class="main-content">
+          <h1>成績入力画面</h1>
+          <div class="info-bar" id="infoBar">データを読み込み中...</div>
+          <div class="btn-container">
+            <button id="paste-btn">Excelからペースト</button>
+            <button id="register-btn">登録（サーバーへ保存）</button>
+          </div>
+          <table class="seiseki" id="scoreTable"></table>
+        </div>
       </div>
-      <table class="seiseki" id="scoreTable"></table>
     `;
 
     // 内部で管理する状態
     this.currentUserId = "teacher001"; // 本来はログインセッション等から取得
     this.targetNendo = null;          // 管理コレクションから取得する年度
     this.allowedPeriod = null;        // 管理コレクションから取得する期間 ("zenki", "kouki", "tsunen")
+    this.myKamokuList = [];           // 担当する全科目のリスト
     this.currentKamokuData = null;    // 現在画面に表示している講座・生徒の生データ
+    this.scoreTableHeaherNum = 2;     // 成績入力の表におけるヘッダの行数
   }
 
   async connectedCallback() {
@@ -128,9 +221,12 @@ class inputSeisekiView extends HTMLElement {
       const result = await dataRes.json();
 
       if (result.success && result.data.length > 0) {
-        // 今回はデモとして、該当教員の「最初の担当講座(j=0)」をターゲットにします
-        this.currentKamokuData = result.data[0]; 
-        
+        // 全科目リストを保持し、サイドバーを描画する
+        this.myKamokuList = result.data;
+        this.currentKamokuData = result.data[0]; // 1件目を初期選択
+
+        this._renderKamokuList(); // サイドバーの描画
+
         this.shadowRoot.getElementById('infoBar').innerText = 
           `【${this.targetNendo}年度】担当科目: ${this.currentKamokuData.kamokuName} | 入力可能期間: ${this._getPeriodLabel(this.allowedPeriod)}`;
         
@@ -151,8 +247,13 @@ class inputSeisekiView extends HTMLElement {
   _renderScoreTable() {
     // 1. NBNrenderTableに渡すための「綺麗な行列（matrix）」を手作業で組み立てる
     const matrix = [];
-    
-    // ヘッダー行1（2段組用）
+
+    // 表の1行目に科目名を表示する
+    const titleText = `${this.currentKamokuData.gakunen ? this.currentKamokuData.gakunen + '年 ' : ''}${this.currentKamokuData.kamokuName}`;
+    // 1行目: 科目名タイトル（11列分のセルを持つ配列）
+    matrix.push([titleText, "", "", "", "", "", "", "", "", "", ""]);
+
+    // ヘッダー行
     matrix.push(["学年", "組", "番号", "氏名", "前期観点", "前期評価(10段階)", "前期欠課", "後期観点", "後期評価(10段階)", "後期欠課", "通年評定(5段階)"]);
 
     // 生徒データの流し込み
@@ -177,20 +278,46 @@ class inputSeisekiView extends HTMLElement {
     // 2. レンダリング関数を実行。ここで「管理期間」による入力可否を完全に制御！
     tableObj.innerHTML = NBNrenderTable(matrix, (rowIndex, colIndex, value) => {
 
-      // ヘッダー行（0行目）は絶対に編集不可
-      if (rowIndex === 0) return { isEditable: false };
-      // 前期期間中：4（観点）、5（評価）、6（欠課）
-      if (this.allowedPeriod === "zenki" && (colIndex === 4 || colIndex === 5 || colIndex === 6)) {
-        return { isEditable: true }; 
+      // -------------------------------------------------------------
+      // 1. 行（tr）全体の判定（colIndex === -1 のときに処理）
+      // -------------------------------------------------------------
+      if (colIndex === -1) {
+        if (rowIndex < this.scoreTableHeaherNum) {
+          return { rowClassName: '' }; // ヘッダー行にはしましまクラスを付けない
+        }
+        const studentIndex = rowIndex - this.scoreTableHeaherNum;
+        const isStripeRow = Math.floor(studentIndex / 5) % 2 === 1;
+        return { rowClassName: isStripeRow ? 'stripe-group' : '' };
       }
-      // 後期期間中：7（観点）、8（評価）、9（欠課）
-      if (this.allowedPeriod === "kouki" && (colIndex === 7 || colIndex === 8 || colIndex === 9)) {
-        return { isEditable: true }; 
+
+      // -------------------------------------------------------------
+      // 2. 各セル（td / th）ごとの判定
+      // -------------------------------------------------------------
+
+      // 0行目：科目名タイトル
+      if (rowIndex === 0) {
+        return {
+          isHeader: true,
+          isEditable: false,
+          colspan: 11,
+          className: 'table-title-cell'
+        };
       }
-      if (this.allowedPeriod === "tsunen" && colIndex === 10) {
-        return { isEditable: true }; 
+
+      // 1行目：表の見出し
+      if (rowIndex === 1) {
+        return { isEditable: false, isHeader: true };
       }
-      return { isEditable: false };
+
+      // 2行目以降（生徒データ行）：編集可能セルの判定
+      let canEdit = false;
+      if (this.allowedPeriod === "zenki" && (colIndex === 4 || colIndex === 5 || colIndex === 6)) canEdit = true;
+      if (this.allowedPeriod === "kouki" && (colIndex === 7 || colIndex === 8 || colIndex === 9)) canEdit = true;
+      if (this.allowedPeriod === "tsunen" && colIndex === 10) canEdit = true;
+
+      return {
+        isEditable: canEdit
+      };
     });
   }
 
@@ -199,7 +326,7 @@ class inputSeisekiView extends HTMLElement {
    */
   _applyPastedData(pastedMatrix) {
     const table = this.shadowRoot.getElementById('scoreTable');
-    const rows = Array.from(table.querySelectorAll('tr')).slice(1); // ヘッダーを除く
+    const rows = Array.from(table.querySelectorAll('tr')).slice(this.scoreTableHeaherNum);
 
     rows.forEach((row, rIdx) => {
       if (!pastedMatrix[rIdx]) return;
@@ -302,7 +429,7 @@ class inputSeisekiView extends HTMLElement {
   _validateInputData() {
     const errors = [];
     const table = this.shadowRoot.getElementById('scoreTable');
-    const rows = Array.from(table.querySelectorAll('tr')).slice(1);
+    const rows = Array.from(table.querySelectorAll('tr')).slice(this.scoreTableHeaherNum);
 
     const regexABC = /^[ABC]{3}$/; // AかBかCからなる3文字
 
@@ -372,7 +499,7 @@ class inputSeisekiView extends HTMLElement {
    */
   async _saveSeisekiData() {
     const table = this.shadowRoot.getElementById('scoreTable');
-    const rows = Array.from(table.querySelectorAll('tr')).slice(1); // ヘッダー行（0行目）を除く
+    const rows = Array.from(table.querySelectorAll('tr')).slice(this.scoreTableHeaherNum);
 
     const updateContents = [];
 
@@ -380,7 +507,7 @@ class inputSeisekiView extends HTMLElement {
       const cells = row.children;
       
       // HTMLテーブルの並び順（matrixの構造）から正確にデータを逆引き集計する
-      const gakunen = parseInt(cells[0].innerText, 10);
+      const gakunen = parseInt(cells[0].innerText, 10); // parseIntの第2引数は基数の設定
       const cls     = parseInt(cells[1].innerText, 10);
       const bangou  = parseInt(cells[2].innerText, 10);
       const name    = cells[3].innerText;
@@ -398,7 +525,7 @@ class inputSeisekiView extends HTMLElement {
         // 編集されなかった期間のデータは、初期読み込み時の既存の値を引き継ぐ（上書き破壊を防ぐ）
         zenki: {
           kanten: cells[4].innerText !== "" ? NBNZenkaku2hankaku(cells[4].innerText).split('') : [],
-          hyouka: cells[5].innerText !== "" ? parseInt(NBNZenkaku2hankaku(cells[5].innerText), 10) : null, // parseIntの第2引数は基数の設定
+          hyouka: cells[5].innerText !== "" ? parseInt(NBNZenkaku2hankaku(cells[5].innerText), 10) : null,
           kekka:  cells[6].innerText !== "" ? parseInt(NBNZenkaku2hankaku(cells[6].innerText), 10) : 0
         },
         kouki: {
@@ -424,7 +551,7 @@ class inputSeisekiView extends HTMLElement {
 
       const resResult = await response.json();
       if (resResult.success) {
-        alert("成績データを正常に登録しました！これで再読み込み時の動作確認も行えます。");
+        alert("成績データを正常に登録しました！");
         // 状態を最新にするために再読み込み
         this._loadInitialData();
       } else {
@@ -441,6 +568,42 @@ class inputSeisekiView extends HTMLElement {
     if (period === "kouki") return "後期成績";
     if (period === "tsunen") return "通年評定";
     return "期間外";
+  }
+
+  // 担当科目一覧をサイドバーに描画する処理
+  _renderKamokuList() {
+    const listEl = this.shadowRoot.getElementById('kamokuList');
+    listEl.innerHTML = '';
+
+    this.myKamokuList.forEach((kamoku, index) => {
+      const li = document.createElement('li');
+      li.className = 'kamoku-item';
+
+      // 最初にリストを表示する際、1つ目の科目をデフォルト選択にする
+      if (this.currentKamokuData && this.currentKamokuData.kamokuId === kamoku.kamokuId) {
+        li.classList.add('selected');
+      }
+
+      li.textContent = `${kamoku.gakunen}年 ${kamoku.kamokuName}`;
+
+      // 科目をクリックしたときの切り替えイベント
+      li.addEventListener('click', () => {
+        this._selectKamoku(kamoku);
+      });
+
+      listEl.appendChild(li);
+    });
+  }
+
+  // 科目を切り替えるメソッド
+  _selectKamoku(selectedKamoku) {
+    this.currentKamokuData = selectedKamoku;
+
+    // サイドバーの見た目（selectedクラス）を更新
+    this._renderKamokuList();
+
+    // 右側のテーブルを選択された科目のデータで再描画
+    this._renderScoreTable();
   }
 
   // フォーカスを上下に移動させるメソッド
