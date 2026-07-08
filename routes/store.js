@@ -45,6 +45,38 @@ router.post('/:resource', async (req, response) => {
       }
     break;
 
+    case 'ks_seiseki':
+
+      try {
+        const contents = req.body.contents; // フロントから送られてきた生徒×成績の配列
+
+        // 1件ずつループして「上書き または 追加」を実行
+        for (const item of contents) {
+          // 1. 検索条件（ピンポイントでこの生徒のこの科目を特定する）
+          const query = {
+            nendo: item.nendo,
+            gakunen: item.gakunen,
+            cls: item.cls,
+            bangou: item.bangou,
+            kamokuId: item.kamokuId
+          };
+
+          // 2. ピンポイントで上書き更新（存在しなければ新規作成）
+          await db.updateDocument(
+            'ks_seiseki',
+            query,
+            { $set: item } // $set を使うことで送られたデータで上書きします
+          );
+        }
+
+        response.json({ success: true, message: "成績データを正常に保存・上書きしました" });
+
+      } catch (error) {
+        console.error("成績データ更新エラー:", error);
+        response.status(500).json({ success: false, message: "データの更新に失敗しました" });
+      }
+    break;
+
     default:
     break;
   }

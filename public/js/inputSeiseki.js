@@ -74,7 +74,7 @@ class inputSeisekiView extends HTMLElement {
     // 2. 登録ボタン押下時の処理
     let registerbtn = this.shadowRoot.getElementById('register-btn');
     registerbtn.addEventListener('click', async () => {
-      await this._saveSeisekiData();
+      await this._onClickSaveButton();
     });
 
     // キーボードによるセル移動処理（既存のロジックをそのまま活用）
@@ -153,8 +153,8 @@ class inputSeisekiView extends HTMLElement {
     const matrix = [];
     
     // ヘッダー行1（2段組用）
-    matrix.push(["学年", "組", "番号", "氏名", "前期評価", "前期観点", "前期欠課", "後期評価", "後期観点", "後期欠課", "通年評定"]);
-    
+    matrix.push(["学年", "組", "番号", "氏名", "前期観点", "前期評価(10段階)", "前期欠課", "後期観点", "後期評価(10段階)", "後期欠課", "通年評定(5段階)"]);
+
     // 生徒データの流し込み
     this.currentKamokuData.students.forEach(s => {
       matrix.push([
@@ -162,13 +162,13 @@ class inputSeisekiView extends HTMLElement {
         s.cls,
         s.bangou,
         s.name,
-        s.zenki.hyouka ?? "", // Nullish Coalescing演算子 (??) 左がnullなら右を適用
-        s.zenki.kanten.join('') ?? "", // 配列を文字列（"AAA"等）に戻す
-        s.zenki.kekka ?? 0,
-        s.kouki.hyouka ?? "",
-        s.kouki.kanten.join('') ?? "",
-        s.kouki.kekka ?? 0,
-        s.tsunen.hyoutei ?? ""
+        s.zenki?.kanten?.join('') ?? "", // 4: 前期観点
+        s.zenki?.hyouka ?? "",           // 5: 前期評価(10段階)
+        s.zenki?.kekka ?? 0,             // 6: 前期欠課
+        s.kouki?.kanten?.join('') ?? "", // 7: 後期観点
+        s.kouki?.hyouka ?? "",           // 8: 後期評価(10段階)
+        s.kouki?.kekka ?? 0,             // 9: 後期欠課
+        s.tsunen?.hyoutei ?? ""          // 10: 通年評定(5段階)
       ]);
     });
 
@@ -176,20 +176,20 @@ class inputSeisekiView extends HTMLElement {
     
     // 2. レンダリング関数を実行。ここで「管理期間」による入力可否を完全に制御！
     tableObj.innerHTML = NBNrenderTable(matrix, (rowIndex, colIndex, value) => {
+
       // ヘッダー行（0行目）は絶対に編集不可
       if (rowIndex === 0) return { isEditable: false };
-
-      // 管理コレクションから得た「期間（period）」に合致する列だけをeditableにする
+      // 前期期間中：4（観点）、5（評価）、6（欠課）
       if (this.allowedPeriod === "zenki" && (colIndex === 4 || colIndex === 5 || colIndex === 6)) {
-        return { isEditable: true }; // 前期の期間なら、前期評価・観点・欠課列のみ許可
+        return { isEditable: true }; 
       }
+      // 後期期間中：7（観点）、8（評価）、9（欠課）
       if (this.allowedPeriod === "kouki" && (colIndex === 7 || colIndex === 8 || colIndex === 9)) {
-        return { isEditable: true }; // 後期の期間なら、後期列のみ許可
+        return { isEditable: true }; 
       }
       if (this.allowedPeriod === "tsunen" && colIndex === 10) {
-        return { isEditable: true }; // 通年の期間なら、通年評定列のみ許可
+        return { isEditable: true }; 
       }
-
       return { isEditable: false };
     });
   }
@@ -212,6 +212,159 @@ class inputSeisekiView extends HTMLElement {
         }
       });
     });
+  }
+
+  /**
+   * 登録ボタンが押された時、現在のHTMLテーブルからデータを集計してサーバーにPOST送信する
+   */
+  async _onClickSaveButton() {
+
+    // 自分が属するルート（inputSeisekiのShadowRoot）を取得
+    const myRoot = this.getRootNode();
+
+    // 親のShadow DOM（NBNShellのShadowRoot）または document を取得
+    let dialog = null;
+
+    // 画面全体（あらゆるShadow DOM）から confirm-dialog を探す確実な関数
+    dialog = this._findConfirmDialog();
+    
+    if (!dialog) {
+      console.error("confirm-dialog が見つかりませんでした。");
+      return;
+    }
+
+    // -------------------------------------------------------------
+    // Step 1: 入力妥当性チェック（バリデーション）
+    // -------------------------------------------------------------
+    const validationErrors = this._validateInputData();
+
+    // 不備が見つかった場合
+    if (validationErrors.length > 0) {
+      const errorMsg = "以下の入力内容に不備があります。修正してください。\n\n・" + validationErrors.join("\n・");
+      // OKボタンのみのダイアログを表示
+      await dialog.show({
+        title: '入力エラー',
+        message: errorMsg,
+        buttons: [
+          { label: 'OK', onClickFunc: 'ok' }
+        ]
+      });
+      return; // 登録処理に進まずここで中断
+    }
+
+    // -------------------------------------------------------------
+    // Step 2: 適正な場合の確認ダイアログ表示
+    // -------------------------------------------------------------
+    const action = await dialog.show({
+      title: '登録確認',
+      message: '入力された内容で成績データを登録（上書き）します。よろしいですか？',
+      buttons: [
+        { label: 'OK', onClickFunc: 'ok' },
+        { label: 'キャンセル', onClickFunc: 'cancel' }
+      ]
+    });
+
+    // キャンセルが押された、またはダイアログが閉じられた場合は処理中断
+    if (action !== 'ok') {
+      return;
+    }
+
+    // -------------------------------------------------------------
+    // Step 3: 実際の登録（POST）処理を実行
+    // -------------------------------------------------------------
+    await this._saveSeisekiData();
+  }
+
+  /**
+   * どんなに深い Shadow DOM の中にいても confirm-dialog を探し出すヘルパーメソッド
+   */
+  _findConfirmDialog() {
+    // 1. 直近の ShadowRoot または document を探す
+    let root = this.getRootNode();
+    while (root) {
+      // 今の階層で confirm-dialog を探す
+      const dialog = root.querySelector('confirm-dialog');
+      if (dialog) return dialog;
+
+      // もし見つからず、まだ上に親コンポーネント（host）があるなら、さらに上のルートへ登る
+      if (root.host) {
+        root = root.host.getRootNode();
+      } else {
+        break; // 一番外側の document まで到達したら終了
+      }
+    }
+    return null;
+  }
+  
+  /**
+   * データチェック関数
+   */
+  _validateInputData() {
+    const errors = [];
+    const table = this.shadowRoot.getElementById('scoreTable');
+    const rows = Array.from(table.querySelectorAll('tr')).slice(1);
+
+    const regexABC = /^[ABC]{3}$/; // AかBかCからなる3文字
+
+    rows.forEach((row, index) => {
+      const cells = row.children;
+      const name = cells[3].innerText;
+
+      // 観点文字のチェック（A, B, C, C' などの許可文字以外が含まれていないか）
+      const zenkiKantenStr = cells[4].innerText.trim();
+      if (zenkiKantenStr !== "" && !regexABC.test(zenkiKantenStr)) {
+        errors.push(`${name} さんの前期観点（${zenkiKantenStr}）に不正な文字が含まれています。`);
+      }
+      const koukiKantenStr = cells[7].innerText.trim();
+      if (koukiKantenStr !== "" && !regexABC.test(koukiKantenStr)) {
+        errors.push(`${name} さんの後期期観点（${koukiKantenStr}）に不正な文字が含まれています。`);
+      }
+
+      // 評価の範囲チェック（1〜10など学校の基準に合わせる）
+      const zenkiHyoukaStr = cells[5].innerText.trim();
+      if (zenkiHyoukaStr !== "") {
+        const val = parseInt(NBNZenkaku2hankaku(zenkiHyoukaStr), 10);
+        if (val === null || val < 1 || val > 10) {
+          if (!(val == 'A' || val == 'B' || val == 'C')) { //総合はABCで評価するので、それも可とする
+            errors.push(`${name} さんの前期評価（${zenkiHyoukaStr}）は 1から10 の範囲で入力してください。`);
+          }
+        }
+      }
+      const koukiHyoukaStr = cells[8].innerText.trim();
+      if (koukiHyoukaStr !== "") {
+        const val = parseInt(NBNZenkaku2hankaku(koukiHyoukaStr), 10);
+        if (val === null || val < 1 || val > 10) {
+          if (!(val == 'A' || val == 'B' || val == 'C')) { //総合はABCで評価するので、それも可とする
+            errors.push(`${name} さんの後期評価（${koukiHyoukaStr}）は 1から10 の範囲で入力してください。`);
+          }
+        }
+      }
+      // 欠課時数がマイナスでないか
+      const zenkiKekkaStr = cells[6].innerText.trim();
+      if (zenkiKekkaStr !== "") {
+        const val = parseInt(NBNZenkaku2hankaku(zenkiKekkaStr), 10);
+        if (val < 0) {
+          errors.push(`${name} さんの欠課時数に正しい数値を入力してください。`);
+        }
+      }
+      const koukiKekkaStr = cells[9].innerText.trim();
+      if (koukiKekkaStr !== "") {
+        const val = parseInt(NBNZenkaku2hankaku(koukiKekkaStr), 10);
+        if (val < 0) {
+          errors.push(`${name} さんの欠課時数に正しい数値を入力してください。`);
+        }
+      }
+
+      // 通年評定のチェック
+      const tuunenStr = cells[10].innerText.trim();
+      if (tuunenStr !== "") {
+        const val = parseInt(NBNZenkaku2hankaku(tuunenStr), 10);
+        if (val === null || val < 1 || val > 5) {
+          errors.push(`${name} さんの通年評定（${tuunenStr}）1から5 の範囲で入力してください。`);
+        }
+      }
+    });
+    return errors;
   }
 
   /**
@@ -244,17 +397,17 @@ class inputSeisekiView extends HTMLElement {
         
         // 編集されなかった期間のデータは、初期読み込み時の既存の値を引き継ぐ（上書き破壊を防ぐ）
         zenki: {
-          hyouka: cells[4].innerText !== "" ? parseInt(cells[4].innerText, 10) : null,
-          kanten: cells[5].innerText !== "" ? cells[5].innerText.split('') : [],
-          kekka: cells[6].innerText !== "" ? parseInt(cells[6].innerText, 10) : 0
+          kanten: cells[4].innerText !== "" ? NBNZenkaku2hankaku(cells[4].innerText).split('') : [],
+          hyouka: cells[5].innerText !== "" ? parseInt(NBNZenkaku2hankaku(cells[5].innerText), 10) : null, // parseIntの第2引数は基数の設定
+          kekka:  cells[6].innerText !== "" ? parseInt(NBNZenkaku2hankaku(cells[6].innerText), 10) : 0
         },
         kouki: {
-          hyouka: cells[7].innerText !== "" ? parseInt(cells[7].innerText, 10) : null,
-          kanten: cells[8].innerText !== "" ? cells[8].innerText.split('') : [],
-          kekka: cells[9].innerText !== "" ? parseInt(cells[9].innerText, 10) : 0
+          kanten: cells[7].innerText !== "" ? NBNZenkaku2hankaku(cells[7].innerText).split('') : [],
+          hyouka: cells[8].innerText !== "" ? parseInt(NBNZenkaku2hankaku(cells[8].innerText), 10) : null,
+          kekka:  cells[9].innerText !== "" ? parseInt(NBNZenkaku2hankaku(cells[9].innerText), 10) : 0
         },
         tsunen: {
-          hyoutei: cells[10].innerText !== "" ? parseInt(cells[10].innerText, 10) : null
+          hyoutei: cells[10].innerText !== "" ? parseInt(NBNZenkaku2hankaku(cells[10].innerText), 10) : null
         }
       };
 
@@ -263,7 +416,7 @@ class inputSeisekiView extends HTMLElement {
 
     try {
       // サーバー側のPOST用保存APIを叩く
-      const response = await fetch('/api/seiseki/save', {
+      const response = await fetch('/api/store/ks_seiseki', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contents: updateContents })
@@ -290,11 +443,60 @@ class inputSeisekiView extends HTMLElement {
     return "期間外";
   }
 
-  // 以下、フォーカス移動系の各種内部メソッド (_moveFocus, _isCaretAtEnd 等) はご提示いただいたものをそのまま内包
-  _moveFocus(currentCell, direction) { /* 省略（提示コード通り） */ }
-  _isCaretAtEnd(element) { /* 省略（提示コード通り） */ }
-  _isCaretAtStart(element) { /* 省略（提示コード通り） */ }
-  _moveCaretToEnd(element) { /* 省略（提示コード通り） */ }
+  // フォーカスを上下に移動させるメソッド
+  _moveFocus(currentCell, direction) {
+    // 1.今いる行（tr）を取得
+    const currentRow = currentCell.parentElement;
+
+    // 今いるセルが、行の中で「何番目のマス（td）か」のインデックス番号を取得する
+    const currentCellIndex = Array.from(currentRow.children).indexOf(currentCell);
+
+    // 2. 移動先の行（tr）を取得（1なら次の行、-1なら前の行）
+    const targetRow = direction === 1 ? currentRow.nextElementSibling : currentRow.previousElementSibling;
+
+    if (targetRow) {
+      // 移動先の行の「子供たち（全td）」の中から、さっき覚えたのと同じ番号のマスをピンポイントで指名する
+      const targetCell = targetRow.children[currentCellIndex];
+
+      // 指名したマスが存在し、かつそれが編集可能なマス（editable-cell）であればフォーカスを当てる
+      if (targetCell && targetCell.classList.contains('editable-cell')) {
+        targetCell.focus();
+      }
+    }
+  }
+
+  // 今のカーソル（キャレット）がセルの「一番右端（末尾）」にあるかチェックする
+  _isCaretAtEnd(element) {
+    const selection = this.shadowRoot.getSelection();
+    if (selection.rangeCount === 0) return false;
+
+    // 今のカーソル位置（オフセット番号）を取得
+    const offset = selection.focusOffset;
+    // セルの中に入っている文字の全体の長さを取得
+    const textLength = element.textContent.length;
+
+    // カーソル位置が文字数と同じなら「右端にいる」と判定
+    return offset === textLength;
+  }
+
+  // 今のカーソル（キャレット）がセルの「一番左端（先頭）」にあるかチェックする
+  _isCaretAtStart(element) {
+    const selection = this.shadowRoot.getSelection();
+    if (selection.rangeCount === 0) return false;
+
+    // カーソル位置が 0 なら「左端にいる」と判定
+    return selection.focusOffset === 0;
+  }
+
+  // 左のセルに戻ったときに、カーソルを文字の最後に回り込ませる親切処理
+  _moveCaretToEnd(element) {
+    const range = document.createRange();
+    const selection = this.shadowRoot.getSelection();
+    range.selectNodeContents(element);
+    range.collapse(false); // falseにすると末尾、trueにすると先頭に吸着
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }
 }
 
 customElements.define('input-seiseki-view', inputSeisekiView);
