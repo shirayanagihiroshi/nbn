@@ -281,7 +281,7 @@ class inputSeisekiView extends HTMLElement {
     const matrix = [];
 
     // 表の1行目に科目名を表示する
-    const titleText = `${this.currentKamokuData.gakunen ? this.currentKamokuData.gakunen + '年 ' : ''}${this.currentKamokuData.kamokuName}`;
+    const titleText = `${this.currentKamokuData.gakunen ? (this.currentKamokuData.gakunen-3) + '年 ' : ''}${this.currentKamokuData.kamokuName}`;
     // 1行目: 科目名タイトル（11列分のセルを持つ配列）
     matrix.push([titleText, "", "", "", "", "", "", "", "", "", ""]);
 
@@ -291,8 +291,7 @@ class inputSeisekiView extends HTMLElement {
     // 生徒データの流し込み
     this.currentKamokuData.students.forEach(s => {
       matrix.push([
-//        s.gakunen - 3, // 表示だけデータベース内部の値を見慣れた形に直す
-        s.gakunen,
+        s.gakunen-3, // 表示だけデータベース内部の値を見慣れた形に直す
         s.cls,
         s.bangou,
         s.name,
@@ -548,7 +547,7 @@ class inputSeisekiView extends HTMLElement {
       // 1人分の新しい成績オブジェクトを組み立てる
       const studentRecord = {
         nendo: this.targetNendo,
-        gakunen: gakunen,
+        gakunen: gakunen+3, //データベース内部の値に変換
         cls: cls,
         bangou: bangou,
         studentName: name,
@@ -617,8 +616,7 @@ class inputSeisekiView extends HTMLElement {
         li.classList.add('selected');
       }
 
-//      li.textContent = `${kamoku.gakunen-3}年 ${kamoku.kamokuName}`; //学年は見た目だけ、データベース内部の値を見慣れた形に直す
-      li.textContent = `${kamoku.gakunen}年 ${kamoku.kamokuName}`;
+      li.textContent = `${kamoku.gakunen-3}年 ${kamoku.kamokuName}`; //学年は見た目だけ、データベース内部の値を見慣れた形に直す
 
       // 科目をクリックしたときの切り替えイベント
       li.addEventListener('click', () => {
