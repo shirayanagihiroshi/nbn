@@ -77,6 +77,51 @@ router.post('/:resource', async (req, response) => {
       }
     break;
 
+    case 'ks_syukketsu':
+
+      try {
+        const { students } = req.body;
+
+        if (!Array.isArray(students) || students.length === 0) {
+          return resp.status(400).json({ success: false, message: '保存対象のデータがありません。' });
+        }
+
+        // 各生徒のデータを updateDocument を使って upsert 保存
+        await Promise.all(students.map(async (student) => {
+          // 検索条件（年度、学年、組、番号）
+          const queryObj = {
+            nendo: student.nendo,
+            gakunen: student.gakunen,
+            cls: student.cls,
+            bangou: student.bangou
+          };
+
+          // 更新内容（$set）
+          const updateObj = {
+            $set: {
+              nendo: student.nendo,
+              gakunen: student.gakunen,
+              cls: student.cls,
+              bangou: student.bangou,
+              studentName: student.studentName,
+              zenki: student.zenki,
+              kouki: student.kouki,
+              updatedAt: new Date()
+            }
+          };
+
+          // 共通関数 updateDocument の呼び出し (ks_syukketsu コレクション)
+          await db.updateDocument('ks_syukketsu', queryObj, updateObj);
+        }));
+
+        return response.json({ success: true, message: '出欠データを正常に保存しました。' });
+
+      } catch (err) {
+        console.error('出欠保存エラー:', err);
+        return response.status(500).json({ success: false, message: 'サーバーエラーが発生しました。' });
+      }
+    break;
+
     default:
     break;
   }

@@ -190,7 +190,19 @@ export class InputSyukketsuView extends HTMLElement {
    */
   _bindEvents() {
     // 保存ボタン
-    this.shadowRoot.getElementById('register-btn').addEventListener('click', () => this._saveData());
+    this.shadowRoot.getElementById('register-btn').addEventListener('click', async () => {
+      const dialog = this._findConfirmDialog();
+      if (dialog) {
+        const action = await dialog.show({
+          title: '登録確認',
+          message: '入力された内容で成績データを登録（上書き）します。よろしいですか？',
+          buttons: [{ label: 'OK', onClickFunc: 'ok' }, { label: 'キャンセル', onClickFunc: 'cancel' }]
+        });
+        if (action !== 'ok') return;
+      }
+
+      this._saveData();
+    });
 
     // ペーストボタン
     this.shadowRoot.getElementById('paste-btn').addEventListener('click', async () => {
@@ -426,54 +438,52 @@ export class InputSyukketsuView extends HTMLElement {
     const tableEl = this.shadowRoot.getElementById('syukketsuTable');
     const trList = Array.from(tableEl.querySelectorAll('tr')).slice(this.headerNum);
 
-    const payloadStudents = trList.map((tr, index) => {
+    // 2. フラット構造の生徒データ配列を作成
+    const payloadStudents = trList.map((tr) => {
       const cells = tr.querySelectorAll('td');
-      const originalStudent = this.syukketsuDataList[index];
 
       return {
-        studentId: originalStudent.studentId,
+        nendo: Number(this.targetNendo),
+        gakunen: Number(this.myClassInfo.gakunen),
+        cls: Number(this.myClassInfo.cls),
         bangou: Number(cells[0].innerText),
-        studentName: cells[1].innerText,
+        studentName: cells[1].innerText.trim(),
         zenki: {
-          syussekiTeishi: cells[3].innerText,
-          ryuugaku: cells[4].innerText,
-          kesseki: cells[6].innerText,
-          chikoku: cells[8].innerText,
-          soutai: cells[9].innerText,
+          syussekiTeishi: cells[3].innerText.trim(),
+          ryuugaku: cells[4].innerText.trim(),
+          kesseki: cells[6].innerText.trim(),
+          chikoku: cells[8].innerText.trim(),
+          soutai: cells[9].innerText.trim(),
         },
         kouki: {
-          syussekiTeishi: cells[11].innerText,
-          ryuugaku: cells[12].innerText,
-          kesseki: cells[14].innerText,
-          chikoku: cells[16].innerText,
-          soutai: cells[17].innerText,
+          syussekiTeishi: cells[11].innerText.trim(),
+          ryuugaku: cells[12].innerText.trim(),
+          kesseki: cells[14].innerText.trim(),
+          chikoku: cells[16].innerText.trim(),
+          soutai: cells[17].innerText.trim(),
         }
       };
     });
 
-    const dialog = this._findConfirmDialog();
-
+    // 3. POST送信
     try {
-      const res = await fetch('/api/save/syukketsu-sheet', {
+      const res = await fetch('/api/store/ks_syukketsu', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          nendo: this.targetNendo,
-          gakunen: this.myClassInfo.gakunen,
-          cls: this.myClassInfo.cls,
           students: payloadStudents
         })
       });
 
       const resData = await res.json();
       if (resData.success) {
-        if (dialog) await dialog.show({ title: '完了', message: '出欠データを正常に保存しました。', buttons: [{ label: 'OK', onClickFunc: 'ok' }] });
+        alert('出欠データを正常に保存しました。');
       } else {
-        throw new Error(resData.message || '保存エラー');
+        throw new Error(resData.message || '保存処理に失敗しました。');
       }
     } catch (err) {
       console.error("保存失敗:", err);
-      if (dialog) await dialog.show({ title: 'エラー', message: '保存に失敗しました。', buttons: [{ label: 'OK', onClickFunc: 'ok' }] });
+      alert(`保存エラー:\n${err.message}`);
     }
   }
 

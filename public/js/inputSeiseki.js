@@ -411,14 +411,8 @@ class inputSeisekiView extends HTMLElement {
    */
   async _onClickSaveButton() {
 
-    // 自分が属するルート（inputSeisekiのShadowRoot）を取得
-    const myRoot = this.getRootNode();
-
-    // 親のShadow DOM（NBNShellのShadowRoot）または document を取得
-    let dialog = null;
-
     // 画面全体（あらゆるShadow DOM）から confirm-dialog を探す確実な関数
-    dialog = this._findConfirmDialog();
+    const dialog = this._findConfirmDialog();
     
     if (!dialog) {
       console.error("confirm-dialog が見つかりませんでした。");
