@@ -260,7 +260,7 @@ class inputSeisekiView extends HTMLElement {
         this._renderKamokuList(); // サイドバーの描画
 
         this.shadowRoot.getElementById('infoBar').innerText = 
-          `【${this.targetNendo}年度】担当科目: ${this.currentKamokuData.kamokuName} | 入力可能期間: ${this._getPeriodLabel(this.allowedPeriod)}`;
+          `【${this.targetNendo}年度】 入力可能期間: ${this._getPeriodLabel(this.allowedPeriod)}`;
         
         // 画面（HTMLテーブル）のレンダリング
         this._renderScoreTable();
@@ -605,11 +605,18 @@ class inputSeisekiView extends HTMLElement {
   }
 
   _getPeriodLabel(period) {
-    if (period === "zenki") return "前期成績";
-    if (period === "kouki") return "後期成績";
-    if (period === "tsunen") return "通年評定";
-    return "期間外";
+    const config = this.allowedPeriods?.[this.currentKamokuData.gakunen];
+    if (!config) return "期間外";
+
+    const activePeriods = [];
+    if (config.zenki) activePeriods.push("前期");
+    if (config.kouki) activePeriods.push("後期");
+    if (config.tsunen) activePeriods.push("通年");
+
+    return activePeriods.length > 0 ? activePeriods.join("・") + "成績" : "入力期間外";
   }
+
+  // サイドバーの科目選択関連 ///////////////////////////////////////////////////////////////////////////////////
 
   // 担当科目一覧をサイドバーに描画する処理
   _renderKamokuList() {
@@ -625,7 +632,11 @@ class inputSeisekiView extends HTMLElement {
         li.classList.add('selected');
       }
 
-      li.textContent = `${kamoku.gakunen-3}年 ${kamoku.kamokuName}`; //学年は見た目だけ、データベース内部の値を見慣れた形に直す
+      // 判定メソッドから (済) または (未) を取得
+      const statusPrefix = this._getCompletionStatusPrefix(kamoku);
+
+      // テキストに (済)/(未) を付与
+      li.textContent = `${statusPrefix} ${kamoku.gakunen-3}年 ${kamoku.kamokuName}`; //学年は見た目だけ、データベース内部の値を見慣れた形に直す
 
       // 科目をクリックしたときの切り替えイベント
       li.addEventListener('click', () => {
@@ -634,6 +645,49 @@ class inputSeisekiView extends HTMLElement {
 
       listEl.appendChild(li);
     });
+  }
+
+  /**
+   * 対象の科目が「入力完了（済）」か「未完了（未）」かを判定してプレフィックス文字列を返す
+   */
+  _getCompletionStatusPrefix(kamoku) {
+    // 該当科目の学年に対応する入力許可設定を取得
+    const periodConfig = this.allowedPeriods?.[kamoku.gakunen];
+
+    // 入力期間外、または生徒データがない場合は判定不能（または未）
+    if (!periodConfig || !kamoku.students || kamoku.students.length === 0) {
+      return "(未)";
+    }
+
+    // 1人も欠けずに全データが埋まっているか（every）をチェック
+    const isAllFilled = kamoku.students.every(s => {
+      
+      // 前期が入力対象の場合：観点・評価・欠課がすべて入っているか
+      if (periodConfig.zenki) {
+        const hasKanten = s.zenki?.kanten && s.zenki.kanten.length > 0;
+        const hasHyouka = s.zenki?.hyouka !== null && s.zenki?.hyouka !== "";
+        const hasKekka  = s.zenki?.kekka !== null && s.zenki?.kekka !== "";
+        if (!hasKanten || !hasHyouka || !hasKekka) return false;
+      }
+
+      // 後期が入力対象の場合：観点・評価・欠課がすべて入っているか
+      if (periodConfig.kouki) {
+        const hasKanten = s.kouki?.kanten && s.kouki.kanten.length > 0;
+        const hasHyouka = s.kouki?.hyouka !== null && s.kouki?.hyouka !== "";
+        const hasKekka  = s.kouki?.kekka !== null && s.kouki?.kekka !== "";
+        if (!hasKanten || !hasHyouka || !hasKekka) return false;
+      }
+
+      // 通年が入力対象の場合：評定が入っているか
+      if (periodConfig.tsunen) {
+        const hasHyoutei = s.tsunen?.hyoutei !== null && s.tsunen?.hyoutei !== "";
+        if (!hasHyoutei) return false;
+      }
+
+      return true; // この生徒のデータは全条件クリア
+    });
+
+    return isAllFilled ? "(済)" : "(未)";
   }
 
   // 科目を切り替えるメソッド
@@ -645,8 +699,14 @@ class inputSeisekiView extends HTMLElement {
 
     // 右側のテーブルを選択された科目のデータで再描画
     this._renderScoreTable();
+
+    // infoBar
+    this.shadowRoot.getElementById('infoBar').innerText = 
+      `【${this.targetNendo}年度】 入力可能期間: ${this._getPeriodLabel(this.allowedPeriod)}`;
+
   }
 
+  // キー操作関数群 ///////////////////////////////////////////////////////////////////////////////////
   // フォーカスを上下に移動させるメソッド
   _moveFocus(currentCell, direction) {
     // 1.今いる行（tr）を取得
