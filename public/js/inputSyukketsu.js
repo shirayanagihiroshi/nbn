@@ -18,7 +18,7 @@ export class InputSyukketsuView extends HTMLElement {
   }
 
   connectedCallback() {
-    this.currentUserId = "teacher010"; // dummy
+    this.currentUserId = "teacher011"; // dummy
     this._renderBaseLayout();
     this._bindEvents();
     this._loadInitialData();
@@ -435,6 +435,13 @@ export class InputSyukketsuView extends HTMLElement {
    * サーバーへのデータ保存処理
    */
   async _saveData() {
+    // 空文字なら null（未入力）、数値があれば Number 型にして返す関数
+    const parseNumOrNull = (text) => {
+      const trimmed = text.trim();
+      if (trimmed === '') return null; // 未入力時は null (または '')
+      const converted = Number(NBNZenkaku2hankaku(trimmed));
+      return isNaN(converted) ? null : converted; // 数値化できない文字の場合の安全対策
+    };
     const tableEl = this.shadowRoot.getElementById('syukketsuTable');
     const trList = Array.from(tableEl.querySelectorAll('tr')).slice(this.headerNum);
 
@@ -449,18 +456,18 @@ export class InputSyukketsuView extends HTMLElement {
         bangou: Number(cells[0].innerText),
         studentName: cells[1].innerText.trim(),
         zenki: {
-          syussekiTeishi: cells[3].innerText.trim(),
-          ryuugaku: cells[4].innerText.trim(),
-          kesseki: cells[6].innerText.trim(),
-          chikoku: cells[8].innerText.trim(),
-          soutai: cells[9].innerText.trim(),
+          syussekiTeishi: parseNumOrNull(cells[3].innerText.trim()),
+          ryuugaku: parseNumOrNull(cells[4].innerText.trim()),
+          kesseki: parseNumOrNull(cells[6].innerText.trim()),
+          chikoku: parseNumOrNull(cells[8].innerText.trim()),
+          soutai: parseNumOrNull(cells[9].innerText.trim()),
         },
         kouki: {
-          syussekiTeishi: cells[11].innerText.trim(),
-          ryuugaku: cells[12].innerText.trim(),
-          kesseki: cells[14].innerText.trim(),
-          chikoku: cells[16].innerText.trim(),
-          soutai: cells[17].innerText.trim(),
+          syussekiTeishi: parseNumOrNull(cells[11].innerText.trim()),
+          ryuugaku: parseNumOrNull(cells[12].innerText.trim()),
+          kesseki: parseNumOrNull(cells[14].innerText.trim()),
+          chikoku: parseNumOrNull(cells[16].innerText.trim()),
+          soutai: parseNumOrNull(cells[17].innerText.trim()),
         }
       };
     });

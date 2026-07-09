@@ -5,6 +5,7 @@ import './inputSeiseki.js';
 import './inputSyukketsu.js';
 import './registerKamoku.js';
 import './registerTantou.js';
+import './gakunenSummary.js';
 
 /**
  * メイン画面のモジュール

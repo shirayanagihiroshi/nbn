@@ -184,6 +184,17 @@ export function NBNGetYearsList() {
 }
 
 /**
+ * 高校の学年のリストのHTLMを返す関数
+ * @param {}
+ */
+export function NBNGetGakunenList() {
+  let str = '<option value="4">高校1年</option>';
+  str += '<option value="5">高校2年</option>';
+  str += '<option value="6">高校3年</option>';
+  return str;
+}
+
+/**
  * 略称から教員IDを返す
  * 担当が複数人いるときは/で区切る。outputは配列になる
  * @param {string[][]} matrix 略称が記載された表

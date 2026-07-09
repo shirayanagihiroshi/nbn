@@ -38,7 +38,7 @@ router.get('/:resource', async (req, resp) => {
                    6: { zenki: false, kouki: true,  tsunen: true  }  // 高3
                   },
                   syukketsuPeriods:{ // 出欠入力の可/不可
-                   4: { zenki: true,  kouki: false }, // 高1
+                   4: { zenki: false,  kouki: true }, // 高1
                    5: { zenki: true,  kouki: false }, // 高2
                    6: { zenki: false, kouki: true  }  // 高3
                   },
@@ -222,6 +222,101 @@ router.get('/:resource', async (req, resp) => {
       } catch (error) {
         console.error("出欠データ取得・整形エラー:", error);
         resp.status(500).json({ success: false, message: "データ処理に失敗しました" });
+      }
+      break;
+    }
+
+    case 'gakunen-summary':{
+      try {
+        const nendo = Number(req.query.nendo);
+        const gakunen = Number(req.query.gakunen); // DB内部値 (4, 5, 6など)
+
+        // 1. 対象年度・学年の「科目一覧」を取得（sortNo順にソート）
+        const kamokuList = await db.findManyDocuments('ks_kamoku', 
+          { nendo, gakunen }, 
+          { sort: { sortNo: 1 } }
+        );
+
+        // 2. 対象年度・学年の「全生徒の成績データ」を取得
+        const seisekiList = await db.findManyDocuments('ks_seiseki', { nendo, gakunen });
+
+        // 3. 対象年度・学年の「全生徒の出欠データ」を取得
+        const syukketsuList = await db.findManyDocuments('ks_syukketsu', { nendo, gakunen });
+
+        // ----------------------------------------------------
+        // データの紐付け（マージ処理）
+        // ----------------------------------------------------
+
+        // 生徒ごとのユニークキーを作るヘルパー ("1_19" => 1組19番)
+        const getStudentKey = (item) => `${item.cls}_${item.bangou}`;
+
+        // A. 出欠データをベースに生徒マップを作成
+        const studentMap = {};
+
+        syukketsuList.forEach(syukketsu => {
+          const key = getStudentKey(syukketsu);
+          studentMap[key] = {
+            cls: syukketsu.cls,
+            bangou: syukketsu.bangou,
+            studentName: syukketsu.studentName,
+            syukketsu: {
+              zenki: syukketsu.zenki,
+              kouki: syukketsu.kouki
+            },
+            seisekiMap: {}, // 科目IDをキーにした成績マップ { 'h2001': { zenki: ..., tsunen: ... } }
+            totalTani: 0    // 履修合計単位数
+          };
+        });
+
+        // B. 成績データを生徒マップに紐付け ＆ 単位数の加算
+        seisekiList.forEach(seiseki => {
+          const key = getStudentKey(seiseki);
+
+          // 出欠に生徒がいればそのマップを使用、なければ新規登録（安全対策）
+          if (!studentMap[key]) {
+            studentMap[key] = {
+              cls: seiseki.cls,
+              bangou: seiseki.bangou,
+              studentName: seiseki.studentName,
+              syukketsu: {},
+              seisekiMap: {},
+              totalTani: 0
+            };
+          }
+
+          // 成績を科目IDキーで格納
+          studentMap[key].seisekiMap[seiseki.kamokuId] = {
+            zenki: seiseki.zenki,
+            kouki: seiseki.kouki,
+            tsunen: seiseki.tsunen
+          };
+
+          // 該当科目の単位数を特定して加算（履修チェック）
+          // ※ 成績ドキュメントが存在する ＝ その科目を履修していると判定
+          const targetKamoku = kamokuList.find(k => k.kamokuId === seiseki.kamokuId);
+          if (targetKamoku && targetKamoku.tani) {
+            studentMap[key].totalTani += Number(targetKamoku.tani) || 0;
+          }
+        });
+
+        // C. 生徒一覧を クラス順 -> 番号順 にソートして配列化
+        const studentSummaryList = Object.values(studentMap).sort((a, b) => {
+          if (a.cls !== b.cls) return a.cls - b.cls;
+          return a.bangou - b.bangou;
+        });
+
+        // レスポンス返却
+        return resp.json({
+          success: true,
+          nendo,
+          gakunen,
+          kamokuHeader: kamokuList, // 列ヘッダー生成用科目リスト
+          students: studentSummaryList
+        });
+
+      } catch (err) {
+        console.error('学年サマリー取得エラー:', err);
+        return resp.status(500).json({ success: false, message: 'サーバーエラーが発生しました。' });
       }
       break;
     }
