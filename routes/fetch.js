@@ -39,8 +39,6 @@ router.get('/:resource', async (req, resp) => {
       const nendo = parseInt(req.query.nendo);
 
       try {
-        let gakunen; //マスターにはないけど、表示したいので、学年を調べて返す。
-
         // 1. コールバックを使わず、直接 await で結果を受け取る！
         // 第3引数（outputFieldObj）にはプロジェクションを渡します
         const masterRecords = await db.findManyDocuments('ks_master', { teachers: teacherId, nendo: nendo }, { projection: { _id: 0 } });
@@ -53,21 +51,21 @@ router.get('/:resource', async (req, resp) => {
         const results = await Promise.all(masterRecords.map(async (record) => {
           let rawStudents = [];
 
+          // 入力画面の左側の科目の一覧で学年も表示したいので、科目に設定されている学年を調べる
+          const targetkamoku = await db.findManyDocuments('ks_kamoku', { nendo: record.nendo, kamokuId: record.kamokuId }, { projection: { _id: 0 } });
+          const gakunen = targetkamoku[0].gakunen;
+
           // 2. 名簿データの引き当て
           if (record.meiboInfo.kongoumeibo !== null) {
             // 混合名簿コレクションから検索
             const kongouDataList = await db.findManyDocuments('goudouMeibo', { kongouMeiboId: record.meiboInfo.kongoumeibo }, { projection: { _id: 0 } });
             const kongouData = kongouDataList[0]; // 配列の先頭を取得
             rawStudents = kongouData ? kongouData.students : [];
-
-            gakunen = kongouData ? kongouData.students[0].gakunen : 4; //4は高校1年。生徒が取れなかったときようのガード処理。
           } else {
             // 通常クラスコレクションから検索
             const classDataList = await db.findManyDocuments('class', { gakunen: record.meiboInfo.gakunen, cls: record.meiboInfo.cls }, { projection: { _id: 0 } });
             const classData = classDataList[0];
             rawStudents = classData ? classData.students : [];
-
-            gakunen = record.meiboInfo.gakunen;
           }
 
           // 3. 入力済みの成績データを取得
