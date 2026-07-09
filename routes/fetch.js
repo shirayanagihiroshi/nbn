@@ -32,10 +32,20 @@ router.get('/:resource', async (req, resp) => {
       //この設定はdummy DBから取って返すようにする。
       resp.json({ success: true,
                   nendo: 2026,
-                  periods:{
+                  periods:{ // 成績入力の可/不可
                    4: { zenki: true,  kouki: false, tsunen: false }, // 高1
-                   5: { zenki: true,  kouki: false, tsunen: true },  // 高2
+                   5: { zenki: true,  kouki: false, tsunen: false }, // 高2
                    6: { zenki: false, kouki: true,  tsunen: true  }  // 高3
+                  },
+                  syukketsuPeriods:{ // 出欠入力の可/不可
+                   4: { zenki: false,  kouki: false }, // 高1
+                   5: { zenki: true,  kouki: false }, // 高2
+                   6: { zenki: false, kouki: true  }  // 高3
+                  },
+                  jugyouNissu:{ // 授業日数
+                   4: { zenki: 100,  kouki: 110 }, // 高1
+                   5: { zenki: 101,  kouki: 111 },  // 高2
+                   6: { zenki: 102,  kouki: 123  }  // 高3
                   }
                 });
       break;
@@ -124,6 +134,93 @@ router.get('/:resource', async (req, resp) => {
     
       } catch (error) {
         console.error("データ取得・整形エラー:", error);
+        resp.status(500).json({ success: false, message: "データ処理に失敗しました" });
+      }
+      break;
+    }
+
+    case 'syukketsu-sheet':{
+
+      const teacherId = req.query.teacherId;
+      const nendo = parseInt(req.query.nendo);
+
+      try {
+        // 1. 担任しているクラス（classコレクション）を検索
+        const classDataList = await db.findManyDocuments(
+          'class', 
+          { tannin: teacherId }, 
+          { projection: { _id: 0 } }
+        );
+
+        // 担任クラスが見つからない場合
+        if (!classDataList || classDataList.length === 0) {
+          return resp.json({ 
+            success: true, 
+            message: "担当しているクラスが見つかりません", 
+            classInfo: null, 
+            students: [] 
+          });
+        }
+
+        const classData = classDataList[0];
+        const gakunen = classData.gakunen;
+        const cls = classData.cls;
+        const rawStudents = classData.students || [];
+
+        // 2. 各生徒に対して非同期で ks_syukketsu コレクションから出欠データを取得（Promise.all）
+        const studentList = await Promise.all(rawStudents.map(async (student) => {
+
+          // 生徒特定クエリ（年度・学年・組・番号）
+          const syukketsuQuery = {
+            nendo: nendo,
+            gakunen: gakunen,
+            cls: cls,
+            bangou: student.bangou
+          };
+
+          // 該当生徒の出欠データを取得
+          const savedRecords = await db.findManyDocuments(
+            'ks_syukketsu', 
+            syukketsuQuery, 
+            { projection: { _id: 0 } }
+          );
+
+          const syukketsuRecord = savedRecords && savedRecords.length > 0 ? savedRecords[0] : null;
+
+          return {
+            gakunen:gakunen,
+            cls:cls,
+            bangou: student.bangou,
+            studentName: student.name,
+            // 保存済みデータがあればそれを、無ければ初期値（空文字）をセット
+            zenki: syukketsuRecord && syukketsuRecord.zenki ? syukketsuRecord.zenki : {
+              syussekiTeishi: '',
+              ryuugaku: '',
+              kesseki: '',
+              chikoku: '',
+              soutai: ''
+            },
+            kouki: syukketsuRecord && syukketsuRecord.kouki ? syukketsuRecord.kouki : {
+              syussekiTeishi: '',
+              ryuugaku: '',
+              kesseki: '',
+              chikoku: '',
+              soutai: ''
+            }
+          };
+        }));
+
+        // 3. フロントへ返却
+        resp.json({
+          success: true,
+          classInfo: {
+            gakunen: gakunen,
+            cls: cls
+          },
+          students: studentList
+        });
+      } catch (error) {
+        console.error("出欠データ取得・整形エラー:", error);
         resp.status(500).json({ success: false, message: "データ処理に失敗しました" });
       }
       break;

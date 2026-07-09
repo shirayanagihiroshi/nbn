@@ -63,6 +63,30 @@ class inputSeisekiView extends HTMLElement {
           border-color: #0056b3;
         }
 
+        /* ==========================================
+         *  (済) / (未) のステータス表示スタイル
+         * ========================================== */
+        /* 通常時（未選択）のステータス色 */
+        .status-done {
+          color: #2e7d32; /* 落ち着いた緑色 */
+          font-weight: bold;
+        }
+        .status-yet {
+          color: #d32f2f; /* 濃い赤色 */
+          font-weight: bold;
+        }
+        /* 選択中（青背景 .selected）の時のステータス色を上書き */
+        .kamoku-item.selected .status-done {
+          color: #b9f6ca; /* 青背景に映える超明るいミントグリーン（または #76ff03 ライム） */
+          font-weight: bold;
+          text-shadow: 0 0 2px rgba(0, 0, 0, 0.5); /* 文字の周りにうっすら影をつけて読みやすく */
+        }
+        .kamoku-item.selected .status-yet {
+          color: #ff8a80; /* 青背景に映える明るいサーモンピンク */
+          font-weight: bold;
+          text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+        }
+
         /* 右：成績テーブル表示エリア */
         .main-content {
           flex-grow: 1;
@@ -634,9 +658,10 @@ class inputSeisekiView extends HTMLElement {
 
       // 判定メソッドから (済) または (未) を取得
       const statusPrefix = this._getCompletionStatusPrefix(kamoku);
+      const statusClass = statusPrefix === "(済)" ? "status-done" : "status-yet";
 
       // テキストに (済)/(未) を付与
-      li.textContent = `${statusPrefix} ${kamoku.gakunen-3}年 ${kamoku.kamokuName}`; //学年は見た目だけ、データベース内部の値を見慣れた形に直す
+      li.innerHTML = `<span class="${statusClass}">${statusPrefix}</span> ${kamoku.gakunen-3}年 ${kamoku.kamokuName}`;//学年は見た目だけ、データベース内部の値を見慣れた形に直す
 
       // 科目をクリックしたときの切り替えイベント
       li.addEventListener('click', () => {
