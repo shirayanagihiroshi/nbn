@@ -237,7 +237,7 @@ class inputSeisekiView extends HTMLElement {
       const configRes = await fetch('/api/fetch/ks_manage'); // 指定なしのときは method: 'GET'
       const config = await configRes.json();
       this.targetNendo = config.nendo;
-      this.allowedPeriod = config.period; // "zenki" | "kouki" | "tsunen"
+      this.allowedPeriods = config.periods;
 
       // 「教員IDに紐づく生徒・成績一覧」をGET
       const dataRes = await fetch(`/api/fetch/input-sheet?teacherId=${this.currentUserId}&nendo=${this.targetNendo}`);
@@ -305,6 +305,15 @@ class inputSeisekiView extends HTMLElement {
       ]);
     });
 
+    // 現在表示している科目の学年を取得
+    const currentGakunen = this.currentKamokuData.gakunen;
+    // 該当学年の許可設定を取得（未設定時の安全対策としてデフォルト値を用意）
+    const gakunenPeriodConfig = this.allowedPeriods?.[currentGakunen] || {
+      zenki: false,
+      kouki: false,
+      tsunen: false
+    };
+
     const tableObj = this.shadowRoot.getElementById('scoreTable');
     
     // 2. レンダリング関数を実行。ここで「管理期間」による入力可否を完全に制御！
@@ -343,9 +352,9 @@ class inputSeisekiView extends HTMLElement {
 
       // 2行目以降（生徒データ行）：編集可能セルの判定
       let canEdit = false;
-      if (this.allowedPeriod === "zenki" && (colIndex === 4 || colIndex === 5 || colIndex === 6)) canEdit = true;
-      if (this.allowedPeriod === "kouki" && (colIndex === 7 || colIndex === 8 || colIndex === 9)) canEdit = true;
-      if (this.allowedPeriod === "tsunen" && colIndex === 10) canEdit = true;
+      if (gakunenPeriodConfig.zenki && (colIndex === 4 || colIndex === 5 || colIndex === 6)) canEdit = true;
+      if (gakunenPeriodConfig.kouki && (colIndex === 7 || colIndex === 8 || colIndex === 9)) canEdit = true;
+      if (gakunenPeriodConfig.tsunen && colIndex === 10) canEdit = true;
 
       return {
         isEditable: canEdit

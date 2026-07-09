@@ -29,7 +29,15 @@ router.get('/:resource', async (req, resp) => {
     }
 
     case 'ks_manage': {
-      resp.json({ success: true, nendo: 2026, period: "zenki" });
+      //この設定はdummy DBから取って返すようにする。
+      resp.json({ success: true,
+                  nendo: 2026,
+                  periods:{
+                   4: { zenki: true,  kouki: false, tsunen: false }, // 高1
+                   5: { zenki: true,  kouki: false, tsunen: true },  // 高2
+                   6: { zenki: false, kouki: true,  tsunen: true  }  // 高3
+                  }
+                });
       break;
     }
 
