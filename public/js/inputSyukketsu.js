@@ -197,7 +197,7 @@ export class InputSyukketsuView extends HTMLElement {
       const dialog = this._findConfirmDialog();
       if (dialog) {
         const action = await dialog.show({
-          title: 'ペースト前の確認',
+          title: '貼り付け前の確認',
           message: 'クリップボードの内容を、現在表示されている入力枠に上書き貼り付けします。\nよろしいですか？',
           buttons: [{ label: 'OK', onClickFunc: 'ok' }, { label: 'キャンセル', onClickFunc: 'cancel' }]
         });
@@ -238,7 +238,7 @@ export class InputSyukketsuView extends HTMLElement {
         this._moveFocus(currentCell, -1);
       } else if (key === 'ArrowRight') {
         if (this._isCaretAtEnd(currentCell)) {
-          // 🚀 改善: 右側の編集可能セルを探索して移動
+          // 改善: 右側の編集可能セルを探索して移動
           let nextCell = currentCell.nextElementSibling;
           while (nextCell && !nextCell.classList.contains('editable-cell')) {
             nextCell = nextCell.nextElementSibling;
@@ -250,7 +250,7 @@ export class InputSyukketsuView extends HTMLElement {
         }
       } else if (key === 'ArrowLeft') {
         if (this._isCaretAtStart(currentCell)) {
-          // 🚀 改善: 左側の編集可能セルを探索して移動
+          // 改善: 左側の編集可能セルを探索して移動
           let prevCell = currentCell.previousElementSibling;
           while (prevCell && !prevCell.classList.contains('editable-cell')) {
             prevCell = prevCell.previousElementSibling;
@@ -486,8 +486,25 @@ export class InputSyukketsuView extends HTMLElement {
     return active.length > 0 ? active.join("・") + "出欠入力可" : "出欠入力期間外";
   }
 
+  /**
+   * どんなに深い Shadow DOM の中にいても confirm-dialog を探し出すヘルパーメソッド
+   */
   _findConfirmDialog() {
-    return document.querySelector('confirm-dialog') || this.shadowRoot.querySelector('confirm-dialog');
+    // 1. 直近の ShadowRoot または document を探す
+    let root = this.getRootNode();
+    while (root) {
+      // 今の階層で confirm-dialog を探す
+      const dialog = root.querySelector('confirm-dialog');
+      if (dialog) return dialog;
+
+      // もし見つからず、まだ上に親コンポーネント（host）があるなら、さらに上のルートへ登る
+      if (root.host) {
+        root = root.host.getRootNode();
+      } else {
+        break; // 一番外側の document まで到達したら終了
+      }
+    }
+    return null;
   }
 
   // キー操作関数群 ///////////////////////////////////////////////////////////////////////////////////
