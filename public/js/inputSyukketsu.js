@@ -11,96 +11,124 @@ export class InputSyukketsuView extends HTMLElement {
     this.currentUserId = null;     // ログイン中の教員ID
     this.targetNendo = null;       // 対象年度
     this.myClassInfo = null;       // 担任クラス情報（{ gakunen: 4, cls: 1 } など）
-    this.allowedPeriods = {};      // 学年ごとの入力許可期間 { "1": { zenki: true, kouki: false }, ... }
-    this.jugyouNissuConfig = {};   // 学年ごとの授業日数 { "1": { zenki: 100, kouki: 105 }, ... }
+    this.allowedPeriods = {};      // 学年ごとの入力許可期間 { "4": { zenki: true, kouki: false }, ... }
+    this.jugyouNissuConfig = {};   // 学年ごとの授業日数 { "4": { zenki: 100, kouki: 105 }, ... }
     this.syukketsuDataList = [];   // 生徒ごとの出欠データ一覧
     this.headerNum = 2;            // ヘッダー行数（タイトル行 + 見出し行）
   }
 
   connectedCallback() {
-    this.currentUserId = "teacher010";//dummy
+    this.currentUserId = "teacher010"; // dummy
     this._renderBaseLayout();
     this._bindEvents();
     this._loadInitialData();
   }
 
   /**
-   * 基本レイアウトのレンダリング
+   * 基本レイアウトのレンダリング（成績入力画面と見た目を統一）
    */
   _renderBaseLayout() {
     this.shadowRoot.innerHTML = `
       <style>
-        :host { display: block; font-family: sans-serif; color: #333; }
-        .container { display: flex; padding: 10px; box-sizing: border-box; }
-        .main-content { flex-grow: 1; overflow-x: auto; }
-        h1 { font-size: 20px; margin-top: 0; margin-bottom: 5px; }
+        :host {
+          display: block;
+          width: 100%;
+        }
+
+        .container {
+          display: flex;
+          gap: 20px;
+          padding: 10px;
+          align-items: flex-start;
+        }
+
+        .main-content {
+          flex-grow: 1;
+          overflow-x: auto;
+        }
+
+        h1 { font-family: sans-serif; color: #333; margin-top: 0; margin-bottom: 5px; font-size: 20px; }
         .info-bar { margin-bottom: 15px; color: #555; font-size: 14px; font-weight: bold; }
         
-        .btn-container { margin-bottom: 10px; display: flex; gap: 10px; }
-        button {
-          padding: 8px 16px;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-          font-weight: bold;
-          background-color: #2c3e50;
-          color: white;
+        .btn-container { margin-top: 15px; margin-bottom: 10px; display: flex; gap: 10px; }
+        button { 
+          padding: 8px 16px; 
+          cursor: pointer; 
+          font-weight: bold; 
+          border-radius: 4px; 
+          border: 1px solid #ccc; 
         }
-        button:hover { opacity: 0.9; }
+        #register-btn { background-color: #4CAF50; color: white; border: none; }
+        #register-btn:hover { background-color: #45a049; }
+        #paste-btn { background-color: #2196F3; color: white; border: none; }
+        #paste-btn:hover { background-color: #0b7dda; }
 
         /* テーブルスタイル */
         .syukketsu-table { 
-          border-collapse: separate; 
-          border-spacing: 0; 
-          margin-top: 10px; 
+          border-collapse: collapse; 
+          margin-top: 15px; 
           width: 100%; 
           box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
         }
         .syukketsu-table th, .syukketsu-table td { 
-          border-right: 1px solid #ddd; 
-          border-bottom: 1px solid #ddd; 
-          padding: 6px 8px; 
+          border: 1px solid #ddd; 
+          padding: 8px; 
           text-align: center; 
           font-size: 13px;
         }
-        .syukketsu-table tr:first-child th { border-top: 1px solid #ddd; }
-        .syukketsu-table th:first-child, .syukketsu-table td:first-child { border-left: 1px solid #ddd; }
 
-        .table-title-cell {
+        /* 科目・クラスタイトル行（0行目） */
+        .syukketsu-table th.table-title-cell {
           background-color: #2c3e50;
           color: white;
-          font-size: 15px;
+          font-size: 16px;
           font-weight: bold;
           text-align: left;
           padding: 10px;
         }
 
-        /* 編集可能セルの強調 */
-        .editable-cell {
-          background-color: #fffde7;
-          outline: 1px solid #ffe082;
-        }
-        .editable-cell:focus {
-          background-color: #ffffff;
-          outline: 2px solid #2196f3;
+        /* 見出し行（1行目） */
+        .syukketsu-table th {
+          background-color: #f2f2f2;
+          color: #333;
+          font-weight: bold;
         }
 
-        /* 自動計算セルの背景色 */
-        .calc-cell {
-          background-color: #f5f5f5;
+        /* ==========================================
+         * セル背景色（しましま ＆ 編集可/不可の掛け合わせ）
+         * ========================================== */
+        /* 1. 通常グループ（白グループ）：編集不能セル */
+        .syukketsu-table td {
+          background-color: #ffffff;
+        }
+
+        /* 2. 通常グループ（白グループ）：編集可能セル */
+        .syukketsu-table td.editable-cell {
+          background-color: #fffde7; /* 淡いクリーム色 */
+          cursor: text;
+        }
+
+        /* 3. 縞グループ（5行ごとのグレーグループ）：編集不能セル */
+        .syukketsu-table tr.stripe-group td {
+          background-color: #f2f4f7; /* うすいグレー */
+        }
+
+        /* 4. 縞グループ（5行ごとのグレーグループ）：編集可能セル */
+        .syukketsu-table tr.stripe-group td.editable-cell {
+          background-color: #fef9c3; /* 少し濃いクリーム色 */
+        }
+
+        /* 5. 自動計算・固定値セル（グレー固定） */
+        .syukketsu-table td.calc-cell {
+          background-color: #e9ecef !important;
           font-weight: bold;
           color: #2c3e50;
         }
 
-        /* 5行ごとのしましま（背景色） */
-        tr.stripe-group td {
-          background-color: #f9fbfd;
-        }
-        tr.stripe-group td.editable-cell {
-          background-color: #fff9c4;
-        }
-        tr.stripe-group td.calc-cell {
-          background-color: #eeeeee;
+        /* 6. フォーカス（入力中）時の強調（共通） */
+        .syukketsu-table .editable-cell:focus {
+          outline: 2px solid #2196F3;
+          background-color: #ffffff !important; /* 入力中のマスは真っ白にして視認性を高める */
         }
       </style>
 
@@ -144,7 +172,7 @@ export class InputSyukketsuView extends HTMLElement {
         const cls = this.myClassInfo.cls;
 
         this.shadowRoot.getElementById('infoBar').innerText = 
-          `【${this.targetNendo}年度】担当: ${gakunen-3}年${cls}組 | 入力可能: ${this._getPeriodLabel(gakunen)}`; //学年の画面表示を調整
+          `【${this.targetNendo}年度】担当: ${gakunen-3}年${cls}組 | 入力可能: ${this._getPeriodLabel(gakunen)}`;
 
         // テーブルの描画
         this._renderSyukketsuTable();
@@ -194,6 +222,47 @@ export class InputSyukketsuView extends HTMLElement {
         this._recalculateRow(e.target.parentElement);
       }
     });
+
+    // キーボード操作（上下左右・Enter移動）の追加
+    const table = this.shadowRoot.getElementById('syukketsuTable');
+    table.addEventListener('keydown', (event) => {
+      const currentCell = event.target;
+      if (!currentCell.classList.contains('editable-cell')) return;
+
+      const key = event.key;
+      if (key === 'ArrowDown' || key === 'Enter') {
+        event.preventDefault();
+        this._moveFocus(currentCell, 1);
+      } else if (key === 'ArrowUp') {
+        event.preventDefault();
+        this._moveFocus(currentCell, -1);
+      } else if (key === 'ArrowRight') {
+        if (this._isCaretAtEnd(currentCell)) {
+          // 🚀 改善: 右側の編集可能セルを探索して移動
+          let nextCell = currentCell.nextElementSibling;
+          while (nextCell && !nextCell.classList.contains('editable-cell')) {
+            nextCell = nextCell.nextElementSibling;
+          }
+          if (nextCell && nextCell.classList.contains('editable-cell')) {
+            event.preventDefault();
+            nextCell.focus();
+          }
+        }
+      } else if (key === 'ArrowLeft') {
+        if (this._isCaretAtStart(currentCell)) {
+          // 🚀 改善: 左側の編集可能セルを探索して移動
+          let prevCell = currentCell.previousElementSibling;
+          while (prevCell && !prevCell.classList.contains('editable-cell')) {
+            prevCell = prevCell.previousElementSibling;
+          }
+          if (prevCell && prevCell.classList.contains('editable-cell')) {
+            event.preventDefault();
+            prevCell.focus();
+            this._moveCaretToEnd(prevCell);
+          }
+        }
+      }
+    });
   }
 
   /**
@@ -210,9 +279,9 @@ export class InputSyukketsuView extends HTMLElement {
     const matrix = [];
 
     // 0行目: タイトル行
-    matrix.push([`クラス出欠入力表 (${gakunen-3}年${this.myClassInfo.cls}組)`]); //表示学年を調整
+    matrix.push([`クラス出欠入力表 (${gakunen-3}年${this.myClassInfo.cls}組)`]);
 
-    // 1行目: ヘッダー見出し（全17列）
+    // 1行目: ヘッダー見出し（全18列）
     matrix.push([
       '出席番号', '氏名', 
       '前期 授業日数', '前期 停・忌等', '前期 留学', '前期 要出席日数', '前期 欠席', '前期 出席日数', '前期 遅刻', '前期 早退',
@@ -249,7 +318,7 @@ export class InputSyukketsuView extends HTMLElement {
     const tableObj = this.shadowRoot.getElementById('syukketsuTable');
     tableObj.innerHTML = NBNrenderTable(matrix, (rowIndex, colIndex, value) => {
 
-      // 行（tr）単位のしましま指定
+      // 行（tr）単位のしましま指定（5行単位）
       if (colIndex === -1) {
         if (rowIndex < this.headerNum) return { rowClassName: '' };
         const studentIndex = rowIndex - this.headerNum;
@@ -414,11 +483,67 @@ export class InputSyukketsuView extends HTMLElement {
     const active = [];
     if (config.zenki) active.push("前期");
     if (config.kouki) active.push("後期");
-    return active.length > 0 ? active.join("・") + "出欠" : "入力期間外";
+    return active.length > 0 ? active.join("・") + "出欠入力可" : "出欠入力期間外";
   }
 
   _findConfirmDialog() {
     return document.querySelector('confirm-dialog') || this.shadowRoot.querySelector('confirm-dialog');
+  }
+
+  // キー操作関数群 ///////////////////////////////////////////////////////////////////////////////////
+  // フォーカスを上下に移動させるメソッド
+  _moveFocus(currentCell, direction) {
+    // 1.今いる行（tr）を取得
+    const currentRow = currentCell.parentElement;
+
+    // 今いるセルが、行の中で「何番目のマス（td）か」のインデックス番号を取得する
+    const currentCellIndex = Array.from(currentRow.children).indexOf(currentCell);
+
+    // 2. 移動先の行（tr）を取得（1なら次の行、-1なら前の行）
+    const targetRow = direction === 1 ? currentRow.nextElementSibling : currentRow.previousElementSibling;
+
+    if (targetRow) {
+      // 移動先の行の「子供たち（全td）」の中から、さっき覚えたのと同じ番号のマスをピンポイントで指名する
+      const targetCell = targetRow.children[currentCellIndex];
+
+      // 指名したマスが存在し、かつそれが編集可能なマス（editable-cell）であればフォーカスを当てる
+      if (targetCell && targetCell.classList.contains('editable-cell')) {
+        targetCell.focus();
+      }
+    }
+  }
+
+  // 今のカーソル（キャレット）がセルの「一番右端（末尾）」にあるかチェックする
+  _isCaretAtEnd(element) {
+    const selection = this.shadowRoot.getSelection();
+    if (selection.rangeCount === 0) return false;
+
+    // 今のカーソル位置（オフセット番号）を取得
+    const offset = selection.focusOffset;
+    // セルの中に入っている文字の全体の長さを取得
+    const textLength = element.textContent.length;
+
+    // カーソル位置が文字数と同じなら「右端にいる」と判定
+    return offset === textLength;
+  }
+
+  // 今のカーソル（キャレット）がセルの「一番左端（先頭）」にあるかチェックする
+  _isCaretAtStart(element) {
+    const selection = this.shadowRoot.getSelection();
+    if (selection.rangeCount === 0) return false;
+
+    // カーソル位置が 0 なら「左端にいる」と判定
+    return selection.focusOffset === 0;
+  }
+
+  // 左のセルに戻ったときに、カーソルを文字の最後に回り込ませる親切処理
+  _moveCaretToEnd(element) {
+    const range = document.createRange();
+    const selection = this.shadowRoot.getSelection();
+    range.selectNodeContents(element);
+    range.collapse(false); // falseにすると末尾、trueにすると先頭に吸着
+    selection.removeAllRanges();
+    selection.addRange(range);
   }
 }
 

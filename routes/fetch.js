@@ -38,14 +38,14 @@ router.get('/:resource', async (req, resp) => {
                    6: { zenki: false, kouki: true,  tsunen: true  }  // 高3
                   },
                   syukketsuPeriods:{ // 出欠入力の可/不可
-                   4: { zenki: false,  kouki: false }, // 高1
+                   4: { zenki: true,  kouki: false }, // 高1
                    5: { zenki: true,  kouki: false }, // 高2
                    6: { zenki: false, kouki: true  }  // 高3
                   },
                   jugyouNissu:{ // 授業日数
-                   4: { zenki: 100,  kouki: 110 }, // 高1
-                   5: { zenki: 101,  kouki: 111 },  // 高2
-                   6: { zenki: 102,  kouki: 123  }  // 高3
+                   4: { zenki: 100,  kouki: 0 }, // 高1
+                   5: { zenki: 101,  kouki: 0 },  // 高2
+                   6: { zenki: 102,  kouki: 0  }  // 高3
                   }
                 });
       break;
