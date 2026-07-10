@@ -72,11 +72,9 @@ router.get('/:resource', async (req, resp) => {
     case 'input-sheet':{
 
       const teacherId = req.query.teacherId;
-      const nendo = parseInt(req.query.nendo);
+      const nendo = parseInt(req.query.nendo, 10);
 
       try {
-        // 1. コールバックを使わず、直接 await で結果を受け取る！
-        // 第3引数（outputFieldObj）にはプロジェクションを渡します
         const masterRecords = await db.findManyDocuments('ks_master', { teachers: teacherId, nendo: nendo }, { projection: { _id: 0 } });
 
         if (!masterRecords || masterRecords.length === 0) {
@@ -87,15 +85,19 @@ router.get('/:resource', async (req, resp) => {
         const results = await Promise.all(masterRecords.map(async (record) => {
           let rawStudents = [];
 
-          // 入力画面の左側の科目の一覧で学年も表示したいので、科目に設定されている学年を調べる
+          // 科目に設定されている学年を調べる
           const targetkamoku = await db.findManyDocuments('ks_kamoku', { nendo: record.nendo, kamokuId: record.kamokuId }, { projection: { _id: 0 } });
-          const gakunen = targetkamoku[0].gakunen;
+          const gakunen = targetkamoku && targetkamoku[0] ? targetkamoku[0].gakunen : null;
 
           // 2. 名簿データの引き当て
-          if (record.meiboInfo.kongoumeibo !== null) {
-            // 混合名簿コレクションから検索
-            const kongouDataList = await db.findManyDocuments('goudouMeibo', { kongouMeiboId: record.meiboInfo.kongoumeibo }, { projection: { _id: 0 } });
-            const kongouData = kongouDataList[0]; // 配列の先頭を取得
+          if (record.meiboInfo.kongoumeibo !== null && record.meiboInfo.kongoumeibo !== undefined) {
+            
+            // 修正：キー名をテストデータに合わせて 'goudouMeiboId' に変更
+            // 念のため、検索するIDの値を数値型（Number）にキャスト
+            const targetId = Number(record.meiboInfo.kongoumeibo);
+            const kongouDataList = await db.findManyDocuments('goudouMeibo', { goudouMeiboId: targetId }, { projection: { _id: 0 } });
+            
+            const kongouData = kongouDataList[0];
             rawStudents = kongouData ? kongouData.students : [];
           } else {
             // 通常クラスコレクションから検索
@@ -106,34 +108,40 @@ router.get('/:resource', async (req, resp) => {
 
           // 3. 入力済みの成績データを取得
           let scoreQuery = { nendo: record.nendo, kamokuId: record.kamokuId };
-          if (record.meiboInfo.kongoumeibo === null) {
+          if (record.meiboInfo.kongoumeibo === null || record.meiboInfo.kongoumeibo === undefined) {
             scoreQuery.gakunen = record.meiboInfo.gakunen;
             scoreQuery.cls = record.meiboInfo.cls;
           }
 
-          // 綺麗に一発で成績配列が取れます
           const currentSavedScores = await db.findManyDocuments('ks_seiseki', scoreQuery, { projection: { _id: 0 } });
 
-          // 4. 名簿と成績データを出席番号でガッチャンコ（ここは前回と同じ）
+          // 4. 名簿と成績データを出席番号でガッチャンコ
           const studentList = rawStudents.map(student => {
-            const sGakunen = student.gakunen || record.meiboInfo.gakunen;
-            const sCls = student.cls || record.meiboInfo.cls;
+            // 合同名簿（生徒ごとに所属が違う）と通常名簿の両方に対応できるよう、値を安全に取得
+            const sGakunen = student.gakunen ? Number(student.gakunen) : Number(record.meiboInfo.gakunen || gakunen);
+            const sCls = student.cls ? Number(student.cls) : Number(record.meiboInfo.cls);
 
             const scoreRecord = currentSavedScores.find(s => 
-              s.gakunen === sGakunen && 
-              s.cls === sCls && 
-              s.bangou === student.bangou
+              Number(s.gakunen) === sGakunen && 
+              Number(s.cls) === sCls && 
+              Number(s.bangou) === Number(student.bangou)
             );
 
             return {
               gakunen: sGakunen,
               cls: sCls,
-              bangou: student.bangou,
+              bangou: Number(student.bangou),
               name: student.name,
               zenki: scoreRecord ? scoreRecord.zenki : { hyouka: null, kanten: [], kekka: 0 },
               kouki: scoreRecord ? scoreRecord.kouki : { hyouka: null, kanten: [], kekka: 0 },
               tsunen: scoreRecord ? scoreRecord.tsunen : { hyoutei: null }
             };
+          });
+
+          // フロントで並び順が崩れないようにクラス・番号でソート
+          studentList.sort((a, b) => {
+            if (a.cls !== b.cls) return a.cls - b.cls;
+            return a.bangou - b.bangou;
           });
 
           return {
@@ -143,11 +151,14 @@ router.get('/:resource', async (req, resp) => {
             tanni: record.tanni,
             meiboInfo: record.meiboInfo,
             students: studentList,
-            gakunen: gakunen,
+            gakunen: gakunen, // これがフロント側での「何年成績」かの期間ロック解除判定に使われます
+            zenki: targetkamoku && targetkamoku[0] ? targetkamoku[0].zenki : false,
+            kouki: targetkamoku && targetkamoku[0] ? targetkamoku[0].kouki : false,
+            godankai: targetkamoku && targetkamoku[0] ? targetkamoku[0].godankai : false
           };
         }));
     
-        //  5. フロントにまとめて返却
+        // 5. フロントにまとめて返却
         resp.json({ success: true, data: results });
     
       } catch (error) {
@@ -332,7 +343,7 @@ router.get('/:resource', async (req, resp) => {
 
           if (info.kongoumeibo !== null && info.kongoumeibo !== undefined) {
             // パターン1: 合同名簿（混合名簿）の場合
-            const targetGoudou = goudouList.find(g => g.goudouMeiboId === info.kongoumeibo);
+            const targetGoudou = goudouList.find(g => g.goudouMeiboId === info.kongoumeibo );
             if (targetGoudou && Array.isArray(targetGoudou.students)) {
               // 合同名簿の生徒配列の中に、対象生徒（学年、クラス、番号が一致）がいるかチェック
               const found = targetGoudou.students.some(s => 
@@ -341,6 +352,9 @@ router.get('/:resource', async (req, resp) => {
                 Number(s.bangou) === student.bangou
               );
               if (found) isBelong = true;
+            }else {
+              // IDが一致する合同名簿が見つからなかった場合に確認するためのデバッグログ
+              console.log(`[警告] 一致する合同名簿IDが見つかりません。探したID: ${targetGoudouId}`);
             }
           } else {
             // パターン2: 通常クラス割り当ての場合（学年とクラスが一致するか）

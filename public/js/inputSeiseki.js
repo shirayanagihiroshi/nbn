@@ -331,6 +331,11 @@ class inputSeisekiView extends HTMLElement {
 
     // 現在表示している科目の学年を取得
     const currentGakunen = this.currentKamokuData.gakunen;
+    // 科目データから、前期・後期・通年(5段階)の制御フラグを取得（安全のためデフォルトfalse）
+    const isKamokuZenkiAllowed  = !!this.currentKamokuData.zenki;
+    const isKamokuKoukiAllowed  = !!this.currentKamokuData.kouki;
+    const isKamokuTsunenAllowed = !!this.currentKamokuData.godankai; // godankai が通年に対応
+
     // 該当学年の許可設定を取得（未設定時の安全対策としてデフォルト値を用意）
     const gakunenPeriodConfig = this.allowedPeriods?.[currentGakunen] || {
       zenki: false,
@@ -376,9 +381,9 @@ class inputSeisekiView extends HTMLElement {
 
       // 2行目以降（生徒データ行）：編集可能セルの判定
       let canEdit = false;
-      if (gakunenPeriodConfig.zenki && (colIndex === 4 || colIndex === 5 || colIndex === 6)) canEdit = true;
-      if (gakunenPeriodConfig.kouki && (colIndex === 7 || colIndex === 8 || colIndex === 9)) canEdit = true;
-      if (gakunenPeriodConfig.tsunen && colIndex === 10) canEdit = true;
+      if (gakunenPeriodConfig.zenki && isKamokuZenkiAllowed && (colIndex === 4 || colIndex === 5 || colIndex === 6)) canEdit = true;
+      if (gakunenPeriodConfig.kouki && isKamokuKoukiAllowed && (colIndex === 7 || colIndex === 8 || colIndex === 9)) canEdit = true;
+      if (gakunenPeriodConfig.tsunen && isKamokuTsunenAllowed && colIndex === 10) canEdit = true;
 
       return {
         isEditable: canEdit
