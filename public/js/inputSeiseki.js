@@ -683,27 +683,37 @@ class inputSeisekiView extends HTMLElement {
       return "(未)";
     }
 
+    // 管理設定 ＆ 科目設定 の両方が true の場合のみを「実際の入力対象」とする
+    const checkZenki  = !!periodConfig.zenki && !!kamoku.zenki;
+    const checkKouki  = !!periodConfig.kouki && !!kamoku.kouki;
+    const checkTsunen = !!periodConfig.tsunen && !!kamoku.godankai; // godankai が通年に対応
+
+    // 追加：もし全ての期間が入力対象外（どこも入力するところがない）なら、チェック不要で「(済)」とする
+    if (!checkZenki && !checkKouki && !checkTsunen) {
+      return "(済)";
+    }
+
     // 1人も欠けずに全データが埋まっているか（every）をチェック
     const isAllFilled = kamoku.students.every(s => {
       
-      // 前期が入力対象の場合：観点・評価・欠課がすべて入っているか
-      if (periodConfig.zenki) {
+      // 実際に前期が入力対象の場合のみチェック
+      if (checkZenki) {
         const hasKanten = s.zenki?.kanten && s.zenki.kanten.length > 0;
         const hasHyouka = s.zenki?.hyouka !== null && s.zenki?.hyouka !== "";
         const hasKekka  = s.zenki?.kekka !== null && s.zenki?.kekka !== "";
         if (!hasKanten || !hasHyouka || !hasKekka) return false;
       }
 
-      // 後期が入力対象の場合：観点・評価・欠課がすべて入っているか
-      if (periodConfig.kouki) {
+      // 実際に後期が入力対象の場合のみチェック
+      if (checkKouki) {
         const hasKanten = s.kouki?.kanten && s.kouki.kanten.length > 0;
         const hasHyouka = s.kouki?.hyouka !== null && s.kouki?.hyouka !== "";
         const hasKekka  = s.kouki?.kekka !== null && s.kouki?.kekka !== "";
         if (!hasKanten || !hasHyouka || !hasKekka) return false;
       }
 
-      // 通年が入力対象の場合：評定が入っているか
-      if (periodConfig.tsunen) {
+      // 実際に通年が入力対象の場合のみチェック
+      if (checkTsunen) {
         const hasHyoutei = s.tsunen?.hyoutei !== null && s.tsunen?.hyoutei !== "";
         if (!hasHyoutei) return false;
       }
@@ -712,6 +722,7 @@ class inputSeisekiView extends HTMLElement {
     });
 
     return isAllFilled ? "(済)" : "(未)";
+
   }
 
   // 科目を切り替えるメソッド
