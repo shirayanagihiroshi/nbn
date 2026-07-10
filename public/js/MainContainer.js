@@ -1,11 +1,10 @@
 import './home.js';
-import './settings.js';
-import './selectInputTarget.js';
 import './inputSeiseki.js';
 import './inputSyukketsu.js';
+import './gakunenSummary.js';
+import './settings.js';
 import './registerKamoku.js';
 import './registerTantou.js';
-import './gakunenSummary.js';
 
 /**
  * メイン画面のモジュール

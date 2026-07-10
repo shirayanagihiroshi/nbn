@@ -29,26 +29,44 @@ router.get('/:resource', async (req, resp) => {
     }
 
     case 'ks_manage': {
-      //この設定はdummy DBから取って返すようにする。
-      resp.json({ success: true,
-                  nendo: 2026,
-                  periods:{ // 成績入力の可/不可
-                   4: { zenki: true,  kouki: false, tsunen: false }, // 高1
-                   5: { zenki: true,  kouki: false, tsunen: false }, // 高2
-                   6: { zenki: false, kouki: true,  tsunen: true  }  // 高3
-                  },
-                  syukketsuPeriods:{ // 出欠入力の可/不可
-                   4: { zenki: false,  kouki: true }, // 高1
-                   5: { zenki: true,  kouki: false }, // 高2
-                   6: { zenki: false, kouki: true  }  // 高3
-                  },
-                  jugyouNissu:{ // 授業日数
-                   4: { zenki: 100,  kouki: 0 }, // 高1
-                   5: { zenki: 101,  kouki: 0 },  // 高2
-                   6: { zenki: 102,  kouki: 0  }  // 高3
-                  }
-                });
-      break;
+      try {
+        // 検索条件を空 {} にしてコレクション内の全件を取得（データは1件のみの想定）
+        const configs = await db.findManyDocuments('ks_manage', {}, {});
+
+        // まだデータベース上に一度も設定が無い（配列が空の）場合の初期モック値
+        if (!configs || configs.length === 0) {
+          return resp.json({
+            success: true,
+            nendo: 2026,
+            periods: {
+              4: { zenki: false, kouki: false, tsunen: false },
+              5: { zenki: false, kouki: false, tsunen: false },
+              6: { zenki: false, kouki: false, tsunen: false }
+            },
+            syukketsuPeriods: {
+              4: { zenki: false, kouki: false },
+              5: { zenki: false, kouki: false },
+              6: { zenki: false, kouki: false }
+            },
+            jugyouNissu: {
+              4: { zenki: 0, kouki: 0 },
+              5: { zenki: 0, kouki: 0 },
+              6: { zenki: 0, kouki: 0 }
+            }
+          });
+        }
+
+        // 配列の最初の1件を取り出す
+        const config = configs[0];
+        config.success = true;
+
+        return resp.json(config);
+
+      } catch (err) {
+        console.error('設定取得エラー:', err);
+        return resp.status(500).json({ success: false, message: 'サーバーエラーが発生しました。' });
+      }
+      break; 
     }
 
     case 'input-sheet':{

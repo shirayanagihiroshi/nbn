@@ -30,13 +30,12 @@ class MainMenu extends HTMLElement {
       <div class="dialog">
         <ul>
           <li><a href="/home">home</a></li>
-          <li><a href="/select-input-target">成績入力</a></li>
-          <li><a href="/input-seiseki">成績入力実装中</a></li>
+          <li><a href="/input-seiseki">成績入力</a></li>
           <li><a href="/input-syukketsu">出欠入力</a></li>
           <li><a href="/gakunen-summary">一覧表示</a></li>
-          <li><a href="/settings">setting</a></li>
-          <li><a href="/register-kamoku">registerKamoku</a></li>
-          <li><a href="/register-tantou">registerTantou</a></li>
+          <li><a href="/settings">管理設定(教務)</a></li>
+          <li><a href="/register-kamoku">registerKamoku(教務)</a></li>
+          <li><a href="/register-tantou">registerTantou(教務)</a></li>
           <li><a id="closemenu" href="/closemenu">メニューを閉じる</a></li>
         </ul>
       </div>

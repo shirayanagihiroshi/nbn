@@ -45,6 +45,37 @@ router.post('/:resource', async (req, response) => {
       }
     break;
 
+    case 'ks_manage': {
+      try {
+        const { nendo, periods, syukketsuPeriods, jugyouNissu } = req.body;
+
+        // コレクション内の唯一のドキュメントを特定するための固定キー
+        const queryObj = { systemConfigKey: "MASTER_CONFIG" };
+
+        // 保存・上書きする内容の定義
+        const updateObj = {
+          $set: {
+            systemConfigKey: "MASTER_CONFIG",
+            nendo: Number(nendo),
+            periods,
+            syukketsuPeriods,
+            jugyouNissu,
+            updatedAt: new Date()
+          }
+        };
+
+        // 指定された共通関数 updateDocument を用いて一括 upsert 更新
+        await db.updateDocument('ks_manage', queryObj, updateObj);
+
+        return response.json({ success: true, message: '設定情報を保存しました。' });
+
+      } catch (err) {
+        console.error('設定保存エラー:', err);
+        return response.status(500).json({ success: false, message: 'サーバーエラーが発生しました。' });
+      }
+      break;
+    }
+
     case 'ks_seiseki':
 
       try {
