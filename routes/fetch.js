@@ -245,97 +245,140 @@ router.get('/:resource', async (req, resp) => {
     }
 
     case 'gakunen-summary':{
-      try {
-        const nendo = Number(req.query.nendo);
-        const gakunen = Number(req.query.gakunen); // DB内部値 (4, 5, 6など)
+  try {
+    const nendo = Number(req.query.nendo);
+    const gakunen = Number(req.query.gakunen);
 
-        // 1. 対象年度・学年の「科目一覧」を取得（sortNo順にソート）
-        const kamokuList = await db.findManyDocuments('ks_kamoku', 
-          { nendo, gakunen }, 
-          { sort: { sortNo: 1 } }
-        );
+    // 1. 各種コレクションから該当年度・学年のデータを一斉に取得
+    const [
+      kamokuList,
+      masterList,
+      classList,
+      goudouList,
+      seisekiList,
+      syukketsuList
+    ] = await Promise.all([
+      db.findManyDocuments('ks_kamoku', { nendo:nendo, gakunen:gakunen }, { projection: { _id: 0 } }),
+      db.findManyDocuments('ks_master', { nendo:nendo }, { projection: { _id: 0 } }), // 単位数や名簿の紐付けマスター
+      db.findManyDocuments('class', { gakunen:gakunen }, { projection: { _id: 0 } }), // 学年のクラス名簿
+      db.findManyDocuments('goudouMeibo', { }, { projection: { _id: 0 } }), // 年度内の合同名簿
+      db.findManyDocuments('ks_seiseki', { nendo:nendo, gakunen:gakunen }, { projection: { _id: 0 } }),
+      db.findManyDocuments('ks_syukketsu', { nendo:nendo, gakunen:gakunen }, { projection: { _id: 0 } })
+    ]);
 
-        // 2. 対象年度・学年の「全生徒の成績データ」を取得
-        const seisekiList = await db.findManyDocuments('ks_seiseki', { nendo, gakunen });
+    // 生徒用ユニークキー作成ヘルパー ("クラス_番号")
+    const getStudentKey = (c, b) => `${c}_${b}`;
 
-        // 3. 対象年度・学年の「全生徒の出欠データ」を取得
-        const syukketsuList = await db.findManyDocuments('ks_syukketsu', { nendo, gakunen });
+    // ----------------------------------------------------
+    // A. 行ベースの作成（出欠ではなく、クラス名簿を主軸にする）
+    // ----------------------------------------------------
+    const studentMap = {};
 
-        // ----------------------------------------------------
-        // データの紐付け（マージ処理）
-        // ----------------------------------------------------
+    classList.forEach(clsDoc => {
+      const clsNum = clsDoc.cls;
+      if (!Array.isArray(clsDoc.students)) return;
 
-        // 生徒ごとのユニークキーを作るヘルパー ("1_19" => 1組19番)
-        const getStudentKey = (item) => `${item.cls}_${item.bangou}`;
+      clsDoc.students.forEach(st => {
+        const key = getStudentKey(clsNum, st.bangou);
+        studentMap[key] = {
+          cls: clsNum,
+          bangou: st.bangou,
+          studentName: st.name,
+          syukketsu: { zenki: {}, kouki: {} }, // デフォルト空オブジェクト
+          seisekiMap: {},
+          totalTani: 0
+        };
+      });
+    });
 
-        // A. 出欠データをベースに生徒マップを作成
-        const studentMap = {};
-
-        syukketsuList.forEach(syukketsu => {
-          const key = getStudentKey(syukketsu);
-          studentMap[key] = {
-            cls: syukketsu.cls,
-            bangou: syukketsu.bangou,
-            studentName: syukketsu.studentName,
-            syukketsu: {
-              zenki: syukketsu.zenki,
-              kouki: syukketsu.kouki
-            },
-            seisekiMap: {}, // 科目IDをキーにした成績マップ { 'h2001': { zenki: ..., tsunen: ... } }
-            totalTani: 0    // 履修合計単位数
-          };
-        });
-
-        // B. 成績データを生徒マップに紐付け ＆ 単位数の加算
-        seisekiList.forEach(seiseki => {
-          const key = getStudentKey(seiseki);
-
-          // 出欠に生徒がいればそのマップを使用、なければ新規登録（安全対策）
-          if (!studentMap[key]) {
-            studentMap[key] = {
-              cls: seiseki.cls,
-              bangou: seiseki.bangou,
-              studentName: seiseki.studentName,
-              syukketsu: {},
-              seisekiMap: {},
-              totalTani: 0
-            };
-          }
-
-          // 成績を科目IDキーで格納
-          studentMap[key].seisekiMap[seiseki.kamokuId] = {
-            zenki: seiseki.zenki,
-            kouki: seiseki.kouki,
-            tsunen: seiseki.tsunen
-          };
-
-          // 該当科目の単位数を特定して加算（履修チェック）
-          // ※ 成績ドキュメントが存在する ＝ その科目を履修していると判定
-          const targetKamoku = kamokuList.find(k => k.kamokuId === seiseki.kamokuId);
-          if (targetKamoku && targetKamoku.tani) {
-            studentMap[key].totalTani += Number(targetKamoku.tani) || 0;
-          }
-        });
-
-        // C. 生徒一覧を クラス順 -> 番号順 にソートして配列化
-        const studentSummaryList = Object.values(studentMap).sort((a, b) => {
-          if (a.cls !== b.cls) return a.cls - b.cls;
-          return a.bangou - b.bangou;
-        });
-
-        // レスポンス返却
-        return resp.json({
-          success: true,
-          nendo,
-          gakunen,
-          kamokuHeader: kamokuList, // 列ヘッダー生成用科目リスト
-          students: studentSummaryList
-        });
-
-      } catch (err) {
-        console.error('学年サマリー取得エラー:', err);
-        return resp.status(500).json({ success: false, message: 'サーバーエラーが発生しました。' });
+    // ----------------------------------------------------
+    // B. 出欠データと成績データのマッピング
+    // ----------------------------------------------------
+    syukketsuList.forEach(syu => {
+      const key = getStudentKey(syu.cls, syu.bangou);
+      if (studentMap[key]) {
+        studentMap[key].syukketsu = {
+          zenki: syu.zenki || {},
+          kouki: syu.kouki || {}
+        };
       }
+    });
+
+    seisekiList.forEach(sei => {
+      const key = getStudentKey(sei.cls, sei.bangou);
+      if (studentMap[key]) {
+        studentMap[key].seisekiMap[sei.kamokuId] = {
+          zenki: sei.zenki || {},
+          kouki: sei.kouki || {},
+          tsunen: sei.tsunen || {}
+        };
+      }
+    });
+
+    // ----------------------------------------------------
+    // C. 単位数（ks_master基準）の集計ロジック
+    // ----------------------------------------------------
+    // 各生徒をループし、ks_master と合致する科目の単位数を足し合わせる
+    Object.values(studentMap).forEach(student => {
+      let taniSum = 0;
+
+      kamokuList.forEach(kamoku => {
+        // この科目に紐付くマスター情報を抽出
+        const matchingMasters = masterList.filter(m => m.kamokuId === kamoku.kamokuId);
+
+        matchingMasters.forEach(master => {
+          const info = master.meiboInfo || {};
+          let isBelong = false;
+
+          if (info.kongoumeibo !== null && info.kongoumeibo !== undefined) {
+            // パターン1: 合同名簿（混合名簿）の場合
+            const targetGoudou = goudouList.find(g => g.goudouMeiboId === info.kongoumeibo);
+            if (targetGoudou && Array.isArray(targetGoudou.students)) {
+              // 合同名簿の生徒配列の中に、対象生徒（学年、クラス、番号が一致）がいるかチェック
+              const found = targetGoudou.students.some(s => 
+                Number(s.gakunen) === gakunen && 
+                Number(s.cls) === student.cls && 
+                Number(s.bangou) === student.bangou
+              );
+              if (found) isBelong = true;
+            }
+          } else {
+            // パターン2: 通常クラス割り当ての場合（学年とクラスが一致するか）
+            if (Number(info.gakunen) === gakunen && Number(info.cls) === student.cls) {
+              isBelong = true;
+            }
+          }
+
+          // 履修が確認できたら、このマスターに設定されている単位数を加算
+          if (isBelong) {
+            taniSum += Number(master.tanni) || 0;
+          }
+        });
+      });
+
+      student.totalTani = taniSum;
+    });
+
+    // ----------------------------------------------------
+    // D. クラス順 -> 番号順 にソートして配列化
+    // ----------------------------------------------------
+    const studentSummaryList = Object.values(studentMap).sort((a, b) => {
+      if (a.cls !== b.cls) return a.cls - b.cls;
+      return a.bangou - b.bangou;
+    });
+
+    return resp.json({
+      success: true,
+      nendo,
+      gakunen,
+      kamokuHeader: kamokuList, // 表示する科目の列（sortNo順）
+      students: studentSummaryList
+    });
+
+  } catch (err) {
+    console.error('学年サマリー構築エラー:', err);
+    return resp.status(500).json({ success: false, message: 'サーバーエラーが発生しました。' });
+  }
       break;
     }
 
