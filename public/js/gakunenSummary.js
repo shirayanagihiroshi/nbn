@@ -183,7 +183,7 @@ class gakunenSummaryView extends HTMLElement {
     // 3. 出欠列
     // --------------------------------------------------
     const syukketsuHeader = [
-      '出席すべき日数',
+      '授業日数',
       '出停・忌引等',
       '留学授業日数',
       '要出席日数',
@@ -211,7 +211,7 @@ class gakunenSummaryView extends HTMLElement {
       };
 
       return [
-        getVal('syussekiSubeki'),  // 出席すべき日数
+        getVal('syussekiSubeki'),  // 授業日数
         getVal('syussekiTeishi'),  // 出停・忌引等
         getVal('ryuugaku'),        // 留学授業日数
         getVal('youSyusseki'),     // 出席しなければならない日数(要出席)

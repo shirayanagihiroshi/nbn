@@ -346,6 +346,33 @@ router.get('/:resource', async (req, resp) => {
       }
     });
 
+    const jugyouNissuConfig = (manageDoc.jugyouNissu && manageDoc.jugyouNissu[String(gakunen)]) || { zenki: 0, kouki: 0 };
+
+    Object.values(studentMap).forEach(student => {
+      ['zenki', 'kouki'].forEach(gKey => {
+        const sData = student.syukketsu[gKey];
+        
+        // 1. 授業日数（出席すべき日数）を管理データ(ks_manage)からセット
+        const syussekiSubeki = Number(jugyouNissuConfig[gKey]) || 0;
+        sData.syussekiSubeki = syussekiSubeki;
+
+        // 2. DBに入力されている値を数値として取得（未入力なら0として扱う）
+        const teishi = Number(sData.syussekiTeishi) || 0;
+        const ryuugaku = Number(sData.ryuugaku) || 0;
+        const kesseki = Number(sData.kesseki) || 0;
+
+        // 3. 計算式の適用
+        // 要出席日数 = 授業日数 - 出停・忌引等 - 留学授業日数
+        const youSyusseki = syussekiSubeki - teishi - ryuugaku;
+        // 出席日数 = 要出席日数 - 欠席日数
+        const syusseki = youSyusseki - kesseki;
+
+        // 4. 計算結果をプロパティに割り当て
+        sData.youSyusseki = youSyusseki;
+        sData.syusseki = syusseki;
+      });
+    });
+
     seisekiList.forEach(sei => {
       const key = getStudentKey(sei.cls, sei.bangou);
       if (studentMap[key]) {
@@ -365,18 +392,27 @@ router.get('/:resource', async (req, resp) => {
       let inputTaniSum = 0;     // 入力完了済みの単位数
 
       kamokuList.forEach(kamoku => {
+        // 1. 選択中の時期（targetGakki）において、この科目が対象外ならスキップ
+        const isTargetKamokuForPeriod = 
+          (targetGakki === 'zenki' && kamoku.zenki === true) ||
+          (targetGakki === 'kouki' && kamoku.kouki === true) ||
+          (targetGakki === 'tsunen' && kamoku.godankai === true);
+
+        if (!isTargetKamokuForPeriod) {
+          return; // 対象外の科目のため、総単位数にも入力済単位数にも含めない
+        }
+
         const matchingMasters = masterList.filter(m => m.kamokuId === kamoku.kamokuId);
 
         matchingMasters.forEach(master => {
           const info = master.meiboInfo || {};
           let isBelong = false;
 
-          // --- 1. 生徒の履修チェック ---
+          // --- 生徒の履修チェック ---
           if (info.kongoumeibo !== null && info.kongoumeibo !== undefined) {
             // パターン1: 合同名簿（混合名簿）の場合
             const targetGoudou = goudouList.find(g => g.goudouMeiboId === info.kongoumeibo);
             if (targetGoudou && Array.isArray(targetGoudou.students)) {
-              // 合同名簿の生徒配列の中に、対象生徒（学年、クラス、番号が一致）がいるかチェック
               const found = targetGoudou.students.some(s => 
                 Number(s.gakunen) === gakunen && 
                 Number(s.cls) === student.cls && 
@@ -385,7 +421,7 @@ router.get('/:resource', async (req, resp) => {
               if (found) isBelong = true;
             }
           } else {
-            // パターン2: 通常クラス割り当ての場合（学年とクラスが一致するか）
+            // パターン2: 通常クラス割り当ての場合
             if (Number(info.gakunen) === gakunen && Number(info.cls) === student.cls) {
               isBelong = true;
             }
@@ -394,7 +430,9 @@ router.get('/:resource', async (req, resp) => {
           // --- 2. 単位数の加算および入力完了判定 ---
           if (isBelong) {
             const masterTanni = Number(master.tanni) || 0;
-            totalTaniSum += masterTanni; // 総単位数に加算
+            
+            // 対象科目＆履修生徒であるため、総単位数に加算
+            totalTaniSum += masterTanni;
 
             const seiData = student.seisekiMap[kamoku.kamokuId];
 
@@ -408,8 +446,7 @@ router.get('/:resource', async (req, resp) => {
                                        z.hyouka !== null && z.hyouka !== "" &&
                                        z.kekka !== null && z.kekka !== "";
 
-                // 管理設定で許可 ＆ 科目で前期対象 ＆ データ入力済
-                if (currentGakunenPeriods.zenki && kamoku.zenki && isZenkiEntered) {
+                if (currentGakunenPeriods.zenki && isZenkiEntered) {
                   isCompleted = true;
                 }
               }
@@ -421,8 +458,7 @@ router.get('/:resource', async (req, resp) => {
                                        k.hyouka !== null && k.hyouka !== "" &&
                                        k.kekka !== null && k.kekka !== "";
 
-                // 管理設定で許可 ＆ 科目で後期対象 ＆ データ入力済
-                if (currentGakunenPeriods.kouki && kamoku.kouki && isKoukiEntered) {
+                if (currentGakunenPeriods.kouki && isKoukiEntered) {
                   isCompleted = true;
                 }
               }
@@ -430,11 +466,9 @@ router.get('/:resource', async (req, resp) => {
               // 画面で「通年」表示時
               else if (targetGakki === 'tsunen') {
                 const t = seiData.tsunen;
-                // 通年の入力判定：5段階評定（hyoutei）が入っているか
                 const isTsunenEntered = t && t.hyoutei !== null && t.hyoutei !== undefined && t.hyoutei !== "";
 
-                // 管理設定で許可 ＆ 科目で5段階評定対象(godankai) ＆ 評定入力済
-                if (currentGakunenPeriods.tsunen && kamoku.godankai && isTsunenEntered) {
+                if (currentGakunenPeriods.tsunen && isTsunenEntered) {
                   isCompleted = true;
                 }
               }
