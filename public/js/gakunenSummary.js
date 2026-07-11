@@ -226,8 +226,10 @@ class gakunenSummaryView extends HTMLElement {
     // --------------------------------------------------
     // 4. 総単位数列
     // --------------------------------------------------
-    const taniHeader = ['総単位数'];
-    const taniRows = students.map(s => [String(s.totalTani ?? 0)]);
+    const taniHeader = ['単位数'];
+    const taniRows = students.map(s => [
+      `${s.inputTani ?? 0} / ${s.totalTani ?? 0}`
+    ]);
     let taniMatrix = NBNconbineMatrixVertical([taniHeader], taniRows);
 
     // --------------------------------------------------

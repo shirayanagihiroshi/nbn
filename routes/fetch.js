@@ -291,15 +291,21 @@ router.get('/:resource', async (req, resp) => {
       classList,
       goudouList,
       seisekiList,
-      syukketsuList
+      syukketsuList,
+      manageList
     ] = await Promise.all([
       db.findManyDocuments('ks_kamoku', { nendo:nendo, gakunen:gakunen }, { projection: { _id: 0 } }),
       db.findManyDocuments('ks_master', { nendo:nendo }, { projection: { _id: 0 } }), // 単位数や名簿の紐付けマスター
       db.findManyDocuments('class', { gakunen:gakunen }, { projection: { _id: 0 } }), // 学年のクラス名簿
       db.findManyDocuments('goudouMeibo', { }, { projection: { _id: 0 } }), // 年度内の合同名簿
       db.findManyDocuments('ks_seiseki', { nendo:nendo, gakunen:gakunen }, { projection: { _id: 0 } }),
-      db.findManyDocuments('ks_syukketsu', { nendo:nendo, gakunen:gakunen }, { projection: { _id: 0 } })
+      db.findManyDocuments('ks_syukketsu', { nendo:nendo, gakunen:gakunen }, { projection: { _id: 0 } }),
+      db.findManyDocuments('ks_manage', { systemConfigKey: 'MASTER_CONFIG' }, { projection: { _id: 0 } })
     ]);
+
+    // 対象学年の期間許可設定を取得
+    const manageDoc = manageList[0] || {};
+    const currentGakunenPeriods = (manageDoc.periods && manageDoc.periods[String(gakunen)]) || { zenki: false, kouki: false, tsunen: false };
 
     // 生徒用ユニークキー作成ヘルパー ("クラス_番号")
     const getStudentKey = (c, b) => `${c}_${b}`;
@@ -351,23 +357,23 @@ router.get('/:resource', async (req, resp) => {
     });
 
     // ----------------------------------------------------
-    // C. 単位数（ks_master基準）の集計ロジック
+    // C. 単位数（ks_master基準）の集計ロジック（総単位数 & 入力済単位数）
     // ----------------------------------------------------
-    // 各生徒をループし、ks_master と合致する科目の単位数を足し合わせる
     Object.values(studentMap).forEach(student => {
-      let taniSum = 0;
+      let totalTaniSum = 0;     // 履修予定の総単位数
+      let inputTaniSum = 0;     // 入力完了済みの単位数
 
       kamokuList.forEach(kamoku => {
-        // この科目に紐付くマスター情報を抽出
         const matchingMasters = masterList.filter(m => m.kamokuId === kamoku.kamokuId);
 
         matchingMasters.forEach(master => {
           const info = master.meiboInfo || {};
           let isBelong = false;
 
+          // --- 1. 生徒の履修チェック ---
           if (info.kongoumeibo !== null && info.kongoumeibo !== undefined) {
             // パターン1: 合同名簿（混合名簿）の場合
-            const targetGoudou = goudouList.find(g => g.goudouMeiboId === info.kongoumeibo );
+            const targetGoudou = goudouList.find(g => g.goudouMeiboId === info.kongoumeibo);
             if (targetGoudou && Array.isArray(targetGoudou.students)) {
               // 合同名簿の生徒配列の中に、対象生徒（学年、クラス、番号が一致）がいるかチェック
               const found = targetGoudou.students.some(s => 
@@ -376,9 +382,6 @@ router.get('/:resource', async (req, resp) => {
                 Number(s.bangou) === student.bangou
               );
               if (found) isBelong = true;
-            }else {
-              // IDが一致する合同名簿が見つからなかった場合に確認するためのデバッグログ
-              console.log(`[警告] 一致する合同名簿IDが見つかりません。探したID: ${targetGoudouId}`);
             }
           } else {
             // パターン2: 通常クラス割り当ての場合（学年とクラスが一致するか）
@@ -387,14 +390,63 @@ router.get('/:resource', async (req, resp) => {
             }
           }
 
-          // 履修が確認できたら、このマスターに設定されている単位数を加算
+          // --- 2. 単位数の加算および入力完了判定 ---
           if (isBelong) {
-            taniSum += Number(master.tanni) || 0;
+            const masterTanni = Number(master.tanni) || 0;
+            totalTaniSum += masterTanni; // 総単位数に加算
+
+            const seiData = student.seisekiMap[kamoku.kamokuId];
+
+            if (seiData) {
+              // 各期間の入力データ存在チェック関数
+              const isZenkiEntered = () => {
+                const z = seiData.zenki;
+                return z && Array.isArray(z.kanten) && z.kanten.length > 0 &&
+                       z.hyouka !== null && z.hyouka !== "" &&
+                       z.kekka !== null && z.kekka !== "";
+              };
+
+              const isKoukiEntered = () => {
+                const k = seiData.kouki;
+                return k && Array.isArray(k.kanten) && k.kanten.length > 0 &&
+                       k.hyouka !== null && k.hyouka !== "" &&
+                       k.kekka !== null && k.kekka !== "";
+              };
+
+              const isTsunenEntered = () => {
+                const t = seiData.tsunen;
+                return t && t.hyoutei !== null && t.hyoutei !== "";
+              };
+
+              // 現在オープンしている期間において、必要な入力がすべて完了しているか判定
+              let isCompleted = false;
+
+              // 【前期】管理設定で許可 ＆ 科目設定で対象 ＆ 前期データが入力済
+              if (currentGakunenPeriods.zenki && kamoku.zenki) {
+                if (isZenkiEntered()) isCompleted = true;
+              }
+
+              // 【後期】管理設定で許可 ＆ 科目設定で対象 ＆ 後期データが入力済
+              if (currentGakunenPeriods.kouki && kamoku.kouki) {
+                if (isKoukiEntered()) isCompleted = true;
+              }
+
+              // 【通年】管理設定で許可 ＆ 科目設定で対象(godankai) ＆ 通年データが入力済
+              if (currentGakunenPeriods.tsunen && kamoku.godankai) {
+                if (isTsunenEntered()) isCompleted = true;
+              }
+
+              // 条件を満たしていれば入力済単位数にカウント
+              if (isCompleted) {
+                inputTaniSum += masterTanni;
+              }
+            }
           }
         });
       });
 
-      student.totalTani = taniSum;
+      student.inputTani = inputTaniSum;
+      student.totalTani = totalTaniSum;
     });
 
     // ----------------------------------------------------
