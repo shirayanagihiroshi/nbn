@@ -22,7 +22,12 @@ class registerKamokuView extends HTMLElement {
     this._tableHeader = [['科目ID', '科目名', '学年', '前期', '後期', '5段階', 'sortNo']];
     this.shadowRoot.innerHTML = `
       <style>
+        .dangerzone {
+          color : red;
+          font-weight: bold;
+        }
       </style>
+      <p class="dangerzone">danger zone この設定を変更するとシステムが動かなくなる可能性があります</p>
       <h1>科目を登録する</h1>
       <p>ユーザが入力する準備の手順その1。登録対象年度を選び、内容をペーストする。</p>
       <p>学年は中1:1, 中2:2, 中3:3, 高1:4, 高2:5, 高3:6 とする</p>
@@ -116,13 +121,17 @@ class registerKamokuView extends HTMLElement {
                              })
       });
 
-      // レスポンスを解析
-      const data = await response.json();
-      console.log("通信後:", data)
+      const resData = await response.json();
+      if (resData.success) {
+        alert('科目情報を正常に保存しました。');
+      } else {
+        throw new Error(resData.message || '保存エラー');
+      }
 
     } catch (error) {
       // 通信エラー（サーバーダウン、オフラインなど）の処理
-      console.error('通信に失敗しました', error);
+      console.error('設定保存失敗:', error);
+      alert(`保存失敗: \n${error.message}`);
     }
   }
 

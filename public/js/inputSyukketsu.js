@@ -8,7 +8,6 @@ export class InputSyukketsuView extends HTMLElement {
     this.attachShadow({ mode: 'open' });
 
     // 状態管理
-    this.currentUserId = null;     // ログイン中の教員ID
     this.targetNendo = null;       // 対象年度
     this.myClassInfo = null;       // 担任クラス情報（{ gakunen: 4, cls: 1 } など）
     this.allowedPeriods = {};      // 学年ごとの入力許可期間 { "4": { zenki: true, kouki: false }, ... }
@@ -18,7 +17,6 @@ export class InputSyukketsuView extends HTMLElement {
   }
 
   connectedCallback() {
-    this.currentUserId = "teacher011"; // dummy
     this._renderBaseLayout();
     this._bindEvents();
     this._loadInitialData();
@@ -153,6 +151,15 @@ export class InputSyukketsuView extends HTMLElement {
    */
   async _loadInitialData() {
     try {
+      // 0. 保存してあるトークンを取り出す(サーバはトークンからユーザのIDを見つける)
+      const token = sessionStorage.getItem('authToken');
+      // トークンがない（未ログイン）場合はログイン画面へ戻すなどのガード
+      if (!token) {
+        alert('ログインセッションが切れています。再ログインしてください。');
+        navigation.navigate('/login');
+        return;
+      }
+
       // 1. 管理設定（年度、学年別期間、学年別授業日数）の取得
       const configRes = await fetch('/api/fetch/ks_manage');
       const config = await configRes.json();
@@ -161,7 +168,7 @@ export class InputSyukketsuView extends HTMLElement {
       this.jugyouNissuConfig = config.jugyouNissu;      // 例: { "4": { zenki: 100, kouki: 105 } }
 
       // 2. ログイン教員の担任クラス情報と生徒の出欠データを取得
-      const dataRes = await fetch(`/api/fetch/syukketsu-sheet?teacherId=${this.currentUserId}&nendo=${this.targetNendo}`);
+      const dataRes = await fetch(`/api/fetch/syukketsu-sheet?token=${encodeURIComponent(token)}&nendo=${this.targetNendo}`);
       const result = await dataRes.json();
 
       if (result.success && result.classInfo) {

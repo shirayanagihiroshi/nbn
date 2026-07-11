@@ -10,6 +10,7 @@ class SettingsView extends HTMLElement {
     super();
     this.attachShadow({ mode: 'open' });
     this.shadowRoot.innerHTML = `
+      <p>本画面などの管理者用設定画面を表示する対象のユーザはDBでなく、ソースコードに記載している</p>
       <h1>教務システム設定画面</h1>
       
       <h2>対象システム年度の設定</h2>

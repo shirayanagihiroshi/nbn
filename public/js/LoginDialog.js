@@ -102,9 +102,10 @@ class LoginDialog extends HTMLElement {
       const data = await response.json();
 
       if (data.success) {
-        // 成功：ブラウザの sessionStorage にトークンと名前を保存
+        // 成功：ブラウザの sessionStorage にトークンと名前、管理ユーザであるかどうかを保存
         sessionStorage.setItem('authToken', data.token);
         sessionStorage.setItem('userName', data.name);
+        sessionStorage.setItem('kanri', data.kanri);
 
         // タイトルライン等に通知
         NBNDispatchEvent('app-login-success', {

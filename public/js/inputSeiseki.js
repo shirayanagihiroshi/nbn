@@ -159,7 +159,6 @@ class inputSeisekiView extends HTMLElement {
     `;
 
     // 内部で管理する状態
-    this.currentUserId = "teacher001"; // 本来はログインセッション等から取得
     this.targetNendo = null;          // 管理コレクションから取得する年度
     this.allowedPeriod = null;        // 管理コレクションから取得する期間 ("zenki", "kouki", "tsunen")
     this.myKamokuList = [];           // 担当する全科目のリスト
@@ -253,6 +252,16 @@ class inputSeisekiView extends HTMLElement {
    */
   async _loadInitialData() {
     try {
+
+      // 0. 保存してあるトークンを取り出す(サーバはトークンからユーザのIDを見つける)
+      const token = sessionStorage.getItem('authToken');
+      // トークンがない（未ログイン）場合はログイン画面へ戻すなどのガード
+      if (!token) {
+        alert('ログインセッションが切れています。再ログインしてください。');
+        navigation.navigate('/login');
+        return;
+      }
+
       // 1. 再読み込み前に「現在選択している科目のID」を記憶しておく
       const currentSelectedId = this.currentKamokuData ? this.currentKamokuData.kamokuId : null;
 
@@ -264,7 +273,7 @@ class inputSeisekiView extends HTMLElement {
       this.allowedPeriods = config.periods;
 
       // 「教員IDに紐づく生徒・成績一覧」をGET
-      const dataRes = await fetch(`/api/fetch/input-sheet?teacherId=${this.currentUserId}&nendo=${this.targetNendo}`);
+      const dataRes = await fetch(`/api/fetch/input-sheet?token=${encodeURIComponent(token)}&nendo=${this.targetNendo}`);
       const result = await dataRes.json();
 
       if (result.success && result.data.length > 0) {

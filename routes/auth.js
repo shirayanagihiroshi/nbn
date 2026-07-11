@@ -48,12 +48,22 @@ router.post('/login', async (req, res) => {
     // 4. DBの該当ユーザーにトークンを書き込む
     await db.updateDocument('user', { userId: user.userId }, { $set: { token: token } });
 
+    // 特定のユーザに管理画面を見せる
+    let kanri = false;
+    if (user.userId == "teacher001" || user.userId == "teacher002") {
+      kanri = true;
+      console.log("login kanri");
+    } else  {
+      console.log("login not kanri");
+    }
+    
     // 5. フロントに トークン と 先生の名前 を返す
     res.json({
       success: true,
       message: "ログイン成功",
       token: token,
-      name: user.name
+      name: user.name,
+      kanri:kanri
     });
 
   } catch (error) {

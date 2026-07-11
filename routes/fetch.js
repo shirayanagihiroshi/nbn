@@ -71,10 +71,22 @@ router.get('/:resource', async (req, resp) => {
 
     case 'input-sheet':{
 
-      const teacherId = req.query.teacherId;
+      const token = req.query.token;
       const nendo = parseInt(req.query.nendo, 10);
 
       try {
+        // トークンから教員IDを検索
+        if (!token) {
+          return res.status(401).json({ success: false, message: "認証情報がありません" });
+        }
+        const users = await db.findManyDocuments('user', { token: token }, { projection: { _id: 0 } });
+        if (!users || users.length === 0) {
+          // トークンが一致しない＝ログアウト済み、または無効なトークン
+          return res.status(401).json({ success: false, message: "セッションが切れています。再ログインしてください" });
+        }
+        // ログイン中の教員IDを取得
+        const teacherId = users[0].userId;
+
         const masterRecords = await db.findManyDocuments('ks_master', { teachers: teacherId, nendo: nendo }, { projection: { _id: 0 } });
 
         if (!masterRecords || masterRecords.length === 0) {
@@ -170,10 +182,22 @@ router.get('/:resource', async (req, resp) => {
 
     case 'syukketsu-sheet':{
 
-      const teacherId = req.query.teacherId;
+      const token = req.query.token;
       const nendo = parseInt(req.query.nendo);
 
       try {
+        // トークンから教員IDを検索
+        if (!token) {
+          return res.status(401).json({ success: false, message: "認証情報がありません" });
+        }
+        const users = await db.findManyDocuments('user', { token: token }, { projection: { _id: 0 } });
+        if (!users || users.length === 0) {
+          // トークンが一致しない＝ログアウト済み、または無効なトークン
+          return res.status(401).json({ success: false, message: "セッションが切れています。再ログインしてください" });
+        }
+        // ログイン中の教員IDを取得
+        const teacherId = users[0].userId;
+
         // 1. 担任しているクラス（classコレクション）を検索
         const classDataList = await db.findManyDocuments(
           'class', 

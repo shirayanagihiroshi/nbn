@@ -30,7 +30,12 @@ class registerTantouView extends HTMLElement {
     this._tableHeader = null; 
     this.shadowRoot.innerHTML = `
       <style>
+        .dangerzone {
+          color : red;
+          font-weight: bold;
+        }
       </style>
+      <p class="dangerzone">danger zone この設定を変更するとシステムが動かなくなる可能性があります</p>
       <h1>科目に対して担当教員と名簿情報、単位を登録する</h1>
       <p>これは手順その2である。手順その1で登録した科目たちに対して設定を行う。</p>
       <p>縦の列（科目）毎に、3つの表の同じ位置の値を紐づけてマスターデータを作成する。</p>
@@ -251,11 +256,16 @@ class registerTantouView extends HTMLElement {
         })
       });
 
-      const result = await response.json();
-      console.log("マスター登録結果:", result);
+      const resData = await response.json();
+      if (resData.success) {
+        alert('科目情報を正常に保存しました。');
+      } else {
+        throw new Error(resData.message || '保存エラー');
+      }
 
     } catch (error) {
-      console.error("マスター登録処理でエラーが発生しました:", error);
+      console.error('設定保存失敗:', error);
+      alert(`保存失敗: \n${error.message}`);
     }
   }
 
