@@ -283,6 +283,7 @@ router.get('/:resource', async (req, resp) => {
   try {
     const nendo = Number(req.query.nendo);
     const gakunen = Number(req.query.gakunen);
+    const targetGakki = req.query.gakki || 'zenki';
 
     // 1. 各種コレクションから該当年度・学年のデータを一斉に取得
     const [
@@ -398,42 +399,44 @@ router.get('/:resource', async (req, resp) => {
             const seiData = student.seisekiMap[kamoku.kamokuId];
 
             if (seiData) {
-              // 各期間の入力データ存在チェック関数
-              const isZenkiEntered = () => {
-                const z = seiData.zenki;
-                return z && Array.isArray(z.kanten) && z.kanten.length > 0 &&
-                       z.hyouka !== null && z.hyouka !== "" &&
-                       z.kekka !== null && z.kekka !== "";
-              };
-
-              const isKoukiEntered = () => {
-                const k = seiData.kouki;
-                return k && Array.isArray(k.kanten) && k.kanten.length > 0 &&
-                       k.hyouka !== null && k.hyouka !== "" &&
-                       k.kekka !== null && k.kekka !== "";
-              };
-
-              const isTsunenEntered = () => {
-                const t = seiData.tsunen;
-                return t && t.hyoutei !== null && t.hyoutei !== "";
-              };
-
-              // 現在オープンしている期間において、必要な入力がすべて完了しているか判定
               let isCompleted = false;
 
-              // 【前期】管理設定で許可 ＆ 科目設定で対象 ＆ 前期データが入力済
-              if (currentGakunenPeriods.zenki && kamoku.zenki) {
-                if (isZenkiEntered()) isCompleted = true;
+              // 画面で「前期」表示時
+              if (targetGakki === 'zenki') {
+                const z = seiData.zenki;
+                const isZenkiEntered = z && Array.isArray(z.kanten) && z.kanten.length > 0 &&
+                                       z.hyouka !== null && z.hyouka !== "" &&
+                                       z.kekka !== null && z.kekka !== "";
+
+                // 管理設定で許可 ＆ 科目で前期対象 ＆ データ入力済
+                if (currentGakunenPeriods.zenki && kamoku.zenki && isZenkiEntered) {
+                  isCompleted = true;
+                }
+              }
+              
+              // 画面で「後期」表示時
+              else if (targetGakki === 'kouki') {
+                const k = seiData.kouki;
+                const isKoukiEntered = k && Array.isArray(k.kanten) && k.kanten.length > 0 &&
+                                       k.hyouka !== null && k.hyouka !== "" &&
+                                       k.kekka !== null && k.kekka !== "";
+
+                // 管理設定で許可 ＆ 科目で後期対象 ＆ データ入力済
+                if (currentGakunenPeriods.kouki && kamoku.kouki && isKoukiEntered) {
+                  isCompleted = true;
+                }
               }
 
-              // 【後期】管理設定で許可 ＆ 科目設定で対象 ＆ 後期データが入力済
-              if (currentGakunenPeriods.kouki && kamoku.kouki) {
-                if (isKoukiEntered()) isCompleted = true;
-              }
+              // 画面で「通年」表示時
+              else if (targetGakki === 'tsunen') {
+                const t = seiData.tsunen;
+                // 通年の入力判定：5段階評定（hyoutei）が入っているか
+                const isTsunenEntered = t && t.hyoutei !== null && t.hyoutei !== undefined && t.hyoutei !== "";
 
-              // 【通年】管理設定で許可 ＆ 科目設定で対象(godankai) ＆ 通年データが入力済
-              if (currentGakunenPeriods.tsunen && kamoku.godankai) {
-                if (isTsunenEntered()) isCompleted = true;
+                // 管理設定で許可 ＆ 科目で5段階評定対象(godankai) ＆ 評定入力済
+                if (currentGakunenPeriods.tsunen && kamoku.godankai && isTsunenEntered) {
+                  isCompleted = true;
+                }
               }
 
               // 条件を満たしていれば入力済単位数にカウント

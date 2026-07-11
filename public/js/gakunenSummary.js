@@ -94,7 +94,7 @@ class gakunenSummaryView extends HTMLElement {
     const targetGakki = gakkiSelect.value; // 'zenki' | 'kouki' | 'tsunen'
 
     try {
-      const res = await fetch(`/api/fetch/gakunen-summary?nendo=${this.targetNendo}&gakunen=${targetGakunen}`);
+      const res = await fetch(`/api/fetch/gakunen-summary?nendo=${this.targetNendo}&gakunen=${targetGakunen}&gakki=${targetGakki}`);
       const data = await res.json();
 
       if (!data.success) {
