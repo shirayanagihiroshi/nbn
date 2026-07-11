@@ -50,13 +50,12 @@ router.post('/login', async (req, res) => {
 
     // 特定のユーザに管理画面を見せる
     let kanri = false;
+    /* 必要に応じてここに設定
     if (user.userId == "teacher001" || user.userId == "teacher002") {
       kanri = true;
-      console.log("login kanri");
-    } else  {
-      console.log("login not kanri");
     }
-    
+    */
+
     // 5. フロントに トークン と 先生の名前 を返す
     res.json({
       success: true,
