@@ -29,7 +29,7 @@ class NBNShell extends HTMLElement {
           top      : 0;
           width    : 100%;
           height   : 50px;
-          background-color : rgb(255,200,200);
+          background-color : #afeeee
         }
         main-container {
           position : absolute;
@@ -37,7 +37,7 @@ class NBNShell extends HTMLElement {
           left     : 0;
           width    : 100%;
           height   : 100%;
-          background-color : yellow;
+          background-color : #e0ffff;
         }
       </style>
       <title-line></title-line>
