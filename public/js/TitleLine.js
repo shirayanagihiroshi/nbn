@@ -41,7 +41,11 @@ class TitleLine extends HTMLElement {
     console.log("TitleLine connectedCallback");
     // ログイン成功イベントを待ち受ける
     window.addEventListener('app-login-success', (event) => {
-      this.logined(event.detail.username); //usernameは未使用
+      this._logined(event.detail.username);
+    });
+
+    window.addEventListener('app-logout-success', (event) => {
+      this._logouted();
     });
 
     const tomenu = this.shadowRoot.querySelector('#tomenu');
@@ -52,11 +56,30 @@ class TitleLine extends HTMLElement {
   /**
    * ログインするリンクをメニューへのリンクにする
    */
-  logined() {
+  _logined(userName) {
     const tomenu = this.shadowRoot.querySelector('#tomenu');
     const tologin = this.shadowRoot.querySelector('#tologin');
     tologin.style.display = 'none';
     tomenu.style.display = 'block';
+
+    const titlestr = this.shadowRoot.getElementById('title');
+    titlestr.innerText = 
+      `成績処理　ようこそ　${userName} 先生`;
+  }
+
+  /**
+   * メニューをログインにする
+   */
+  _logouted() {
+    const tomenu = this.shadowRoot.querySelector('#tomenu');
+    const tologin = this.shadowRoot.querySelector('#tologin');
+    tologin.style.display = 'block';
+    tomenu.style.display = 'none';
+
+    const titlestr = this.shadowRoot.getElementById('title');
+    titlestr.innerText = 
+      `成績処理`;
+
   }
 }
 

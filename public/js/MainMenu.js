@@ -1,3 +1,5 @@
+import { NBNDispatchEvent } from './NBNHelpers.js';
+
 /**
  * メインメニュー(常に画面右上にあるメニューボタンを押して表示される)
  * 表示用クラス
@@ -36,6 +38,7 @@ class MainMenu extends HTMLElement {
           <li><a href="/settings">管理設定(教務)</a></li>
           <li><a href="/register-kamoku">registerKamoku(教務)</a></li>
           <li><a href="/register-tantou">registerTantou(教務)</a></li>
+          <li><a id="logout" href="/logout">ログアウト</a></li>
           <li><a id="closemenu" href="/closemenu">メニューを閉じる</a></li>
         </ul>
       </div>
@@ -49,11 +52,47 @@ class MainMenu extends HTMLElement {
   connectedCallback() {
     console.log("MainMenu connectedCallback");
 
-    let closemenu = this.shadowRoot.getElementById('closemenu');
-      closemenu.addEventListener('click', function () {
-      navigation.back();
-      return false;
+    let logoutmenu = this.shadowRoot.getElementById('logout');
+      logoutmenu.addEventListener('click', (e) => {
+      e.preventDefault();
+      this._logout();
     });
+
+    let closemenu = this.shadowRoot.getElementById('closemenu');
+      closemenu.addEventListener('click',  (e) => {
+      e.preventDefault();
+      navigation.back();
+    });
+  }
+
+  /**
+   * ログアウト処理
+   */
+  async _logout() {
+    const token = sessionStorage.getItem('authToken');
+
+    if (token) {
+      try {
+        // 1. サーバー側にログアウト通知（DBのトークン消去）
+        await fetch('/api/auth/logout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: token })
+        });
+      } catch (error) {
+        console.error('ログアウト通信エラー:', error);
+      }
+    }
+
+    // 2. ブラウザ側のセッション情報を消去
+    sessionStorage.removeItem('authToken');
+    sessionStorage.removeItem('userName');
+
+    // 3. ログアウト成功イベントの発行（タイトルバーの表示切り替え等）
+    NBNDispatchEvent('app-logout-success', {});
+
+    // 4. ログイン画面またはトップページへ遷移
+    navigation.navigate('/home');
   }
 
   /**

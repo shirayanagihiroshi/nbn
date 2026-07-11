@@ -93,40 +93,37 @@ class LoginDialog extends HTMLElement {
     }
 
     try {
-      // fetchの実行
       const response = await fetch('/api/auth/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json' // JSONを送ることを明示
-        },
-        body: JSON.stringify({ 
-          userid: userid, 
-          password: password 
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userid, password })
       });
 
-      // レスポンスを解析
       const data = await response.json();
 
       if (data.success) {
-        // 成功後の遷移処理など
+        // 成功：ブラウザの sessionStorage にトークンと名前を保存
+        sessionStorage.setItem('authToken', data.token);
+        sessionStorage.setItem('userName', data.name);
 
-        // タイトルラインのログインをメニューへ変更
-        NBNDispatchEvent('app-login-success', {detail: { username: "hogehoge" }})
-        // これはテストコード
-        navigation.navigate('/home'); // これはテストコード
+        // タイトルライン等に通知
+        NBNDispatchEvent('app-login-success', {
+          detail: { 
+            username: data.name 
+          }
+        });
+
+        this._close();
+        navigation.navigate('/home');
       } else {
         alert('エラー: ' + data.message);
       }
 
     } catch (error) {
-      // 通信エラー（サーバーダウン、オフラインなど）の処理
       console.error('通信に失敗しました', error);
+      alert('通信に失敗しました。サーバーの状態を確認してください。');
     }
-
-    this._close();
   }
-
   _cancel() {
     navigation.back();
 //    this._close({ success: false });
