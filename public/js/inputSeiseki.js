@@ -585,6 +585,36 @@ class inputSeisekiView extends HTMLElement {
       const bangou  = parseInt(cells[2].innerText, 10);
       const name    = cells[3].innerText;
 
+      const zenkiHyoukatxt = NBNZenkaku2hankaku(cells[5].innerText); //通常は10段階だが、総合はAorBorCで入力
+      let zenkiHyouka;
+      if (zenkiHyoukatxt == "") {
+        zenkiHyouka = null;
+      } else if (zenkiHyoukatxt == 'A' || zenkiHyoukatxt == 'B' || zenkiHyoukatxt == 'C') {
+        zenkiHyouka = zenkiHyoukatxt
+      } else {
+        zenkiHyouka = parseInt(zenkiHyoukatxt, 10);
+      }
+
+      const koukiHyoukatxt = NBNZenkaku2hankaku(cells[8].innerText);
+      let koukiHyouka;
+      if (koukiHyoukatxt == "") {
+        koukiHyouka = null;
+      } else if (koukiHyoukatxt == 'A' || koukiHyoukatxt == 'B' || koukiHyoukatxt == 'C') {
+        koukiHyouka = koukiHyoukatxt
+      } else {
+        koukiHyouka = parseInt(koukiHyoukatxt, 10);
+      }
+
+      const tsuunenHyouteitxt = NBNZenkaku2hankaku(cells[10].innerText);
+      let tsuunenHyoutei;
+      if (tsuunenHyouteitxt == "") {
+        tsuunenHyoutei = null;
+      } else if (tsuunenHyouteitxt == 'A' || tsuunenHyouteitxt == 'B' || tsuunenHyouteitxt == 'C') {
+        tsuunenHyoutei = tsuunenHyouteitxt
+      } else {
+        tsuunenHyoutei = parseInt(tsuunenHyouteitxt, 10);
+      }
+
       // 1人分の新しい成績オブジェクトを組み立てる
       const studentRecord = {
         nendo: this.targetNendo,
@@ -594,20 +624,20 @@ class inputSeisekiView extends HTMLElement {
         studentName: name,
         kamokuId: this.currentKamokuData.kamokuId,
         kamokuName: this.currentKamokuData.kamokuName,
-        
+
         // 編集されなかった期間のデータは、初期読み込み時の既存の値を引き継ぐ（上書き破壊を防ぐ）
         zenki: {
           kanten: cells[4].innerText !== "" ? NBNZenkaku2hankaku(cells[4].innerText).split('') : [],
-          hyouka: cells[5].innerText !== "" ? parseInt(NBNZenkaku2hankaku(cells[5].innerText), 10) : null,
+          hyouka: zenkiHyouka,
           kekka:  cells[6].innerText !== "" ? parseInt(NBNZenkaku2hankaku(cells[6].innerText), 10) : 0
         },
         kouki: {
           kanten: cells[7].innerText !== "" ? NBNZenkaku2hankaku(cells[7].innerText).split('') : [],
-          hyouka: cells[8].innerText !== "" ? parseInt(NBNZenkaku2hankaku(cells[8].innerText), 10) : null,
+          hyouka: koukiHyouka,
           kekka:  cells[9].innerText !== "" ? parseInt(NBNZenkaku2hankaku(cells[9].innerText), 10) : 0
         },
         tsunen: {
-          hyoutei: cells[10].innerText !== "" ? parseInt(NBNZenkaku2hankaku(cells[10].innerText), 10) : null
+          hyoutei: tsuunenHyoutei
         }
       };
 
