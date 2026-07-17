@@ -1,5 +1,9 @@
 'use strict';
 
+// ローカルテスト用：証明書エラーを無視する
+// 本番環境では消すこと
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 /**
  * routes/fetch.js
  * サーバ側のデータ取得処理
@@ -8,6 +12,7 @@
 import express from 'express';
 const router = express.Router();
 import db    from '../lib/database.js';
+import keys  from '../lib/keys.js';
 
 // ここでは '/api/fetch/:resource' ではなく、子パスの '/:resource' だけを書く
 router.get('/:resource', async (req, resp) => {
@@ -506,6 +511,25 @@ router.get('/:resource', async (req, resp) => {
     console.error('学年サマリー構築エラー:', err);
     return resp.status(500).json({ success: false, message: 'サーバーエラーが発生しました。' });
   }
+      break;
+    }
+
+    case 'getfromskt': {
+
+      try {
+        const userid = req.query.userid;
+        const res = await fetch(keys.URLGetFromSKT + '/api/fetch-data?userid=' + userid, {
+          method: 'GET',
+          headers: {
+              'xapikey': keys.xapikey
+            }
+          });
+        const dataFromSKT = await res.json();
+        resp.json({ success: true, message: "getfromskt result", data: dataFromSKT.data });
+      } catch (err) {
+        console.error('getfromskt エラー:', err);
+        return resp.status(500).json({ success: false, message: 'getfromskt  エラー' });
+      }
       break;
     }
 

@@ -62,6 +62,9 @@ router.post('/login', async (req, res) => {
       message: "ログイン成功",
       token: token,
       name: user.name,
+      userid:userid, // 本システム単体ではtokenからuseridを引き当てるから
+                     // これは不要であるが、追加機能のSKTからのデータ取得の際に
+                     // 両システムで共通の識別子であるuseridを使うことにする。
       kanri:kanri
     });
 

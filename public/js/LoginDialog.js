@@ -105,6 +105,7 @@ class LoginDialog extends HTMLElement {
         // 成功：ブラウザの sessionStorage にトークンと名前、管理ユーザであるかどうかを保存
         sessionStorage.setItem('authToken', data.token);
         sessionStorage.setItem('userName', data.name);
+        sessionStorage.setItem('userid', data.userid); // SKTからのデータ取得でのみ使用
         sessionStorage.setItem('kanri', data.kanri);
 
         // タイトルライン等に通知

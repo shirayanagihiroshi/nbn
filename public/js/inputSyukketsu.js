@@ -60,6 +60,8 @@ export class InputSyukketsuView extends HTMLElement {
         #register-btn:hover { background-color: #45a049; }
         #paste-btn { background-color: #2196F3; color: white; border: none; }
         #paste-btn:hover { background-color: #0b7dda; }
+        #getfromskt-btn { background-color: #ff8c00; color: white; border: none; }
+        #getfromskt-btn:hover { background-color: #d2691e; }
 
         /* テーブルスタイル */
         .syukketsu-table { 
@@ -137,6 +139,7 @@ export class InputSyukketsuView extends HTMLElement {
 
           <div class="btn-container">
             <button id="paste-btn">Excelからペースト</button>
+            <button id="getfromskt-btn">SKTからデータ取得</button>
             <button id="register-btn">登録（サーバーへ保存）</button>
           </div>
 
@@ -231,6 +234,38 @@ export class InputSyukketsuView extends HTMLElement {
         this._applyPastedData(parsedMatrix);
       } catch (err) {
         console.error("クリップボード読み込み失敗:", err);
+      }
+    });
+
+    // SKTからデータ取得ボタン
+    this.shadowRoot.getElementById('getfromskt-btn').addEventListener('click', async () => {
+      const dialog = this._findConfirmDialog();
+      if (dialog) {
+        const action = await dialog.show({
+          title: 'データ取得前の確認',
+          message: 'SKTからデータを取得し、現在表示されている入力枠に上書きします。\nよろしいですか？',
+          buttons: [{ label: 'OK', onClickFunc: 'ok' }, { label: 'キャンセル', onClickFunc: 'cancel' }]
+        });
+        if (action !== 'ok') return;
+      }
+
+      try {
+        // 保存してあるuserIdを取り出す(userIdはここでのみ使用。SKTはトークンからのID引当てに未対応のため)
+        const userid = sessionStorage.getItem('userid');
+
+        const res = await fetch('/api/fetch/getfromskt?userid=' + userid);
+
+        const resData = await res.json();
+        if (resData.success) {
+          /* データ更新処理
+             これから実装する
+          */
+        } else {
+          throw new Error(resData.message || 'SKTからのデータ取得に失敗しました。');
+        }
+
+      } catch (err) {
+        console.error("SKTからのデータ取得に失敗しました。:", err);
       }
     });
 
