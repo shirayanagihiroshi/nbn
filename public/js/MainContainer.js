@@ -5,6 +5,7 @@ import './gakunenSummary.js';
 import './settings.js';
 import './registerKamoku.js';
 import './registerTantou.js';
+import './getMeiboData.js';
 
 /**
  * メイン画面のモジュール

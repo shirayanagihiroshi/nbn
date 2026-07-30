@@ -118,7 +118,8 @@ class MainMenu extends HTMLElement {
       const adminMenuItems = [
         { href: '/settings', label: '管理設定(教務)' },
         { href: '/register-kamoku', label: 'registerKamoku(教務)' },
-        { href: '/register-tantou', label: 'registerTantou(教務)' }
+        { href: '/register-tantou', label: 'registerTantou(教務)' },
+        { href: '/get-meibodata', label: 'getMeiboData(教務)' }
       ];
 
       adminMenuItems.forEach(item => {

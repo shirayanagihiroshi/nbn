@@ -533,6 +533,50 @@ router.get('/:resource', async (req, resp) => {
       break;
     }
 
+    case 'getfromskt_meibo': {
+
+      const nendo = parseInt(req.query.nendo);
+      try {
+        // sktからデータを取得。sktは年度を持たない。該当コレクションを全部取得
+        const res = await fetch(keys.URLGetFromSKT + '/api/fetch-data-meibo' , {
+          method: 'GET',
+          headers: {
+              'xapikey': keys.xapikey
+            }
+          });
+        const dataFromSKT = await res.json();
+        if (!dataFromSKT.success) {
+          throw new Error('SKTからのデータ取得に失敗しました');33
+        }
+
+        // ------ fetchでは、基本的にデータを取得してブラウザへ返却するだけだが ------
+        // ------ ここでは例外的に、データの保存を行う                          ------
+        // 1.クラスと合同名簿に年度を付加する。user(のログイン用データ)は年度をまたいで同じなので、そのまま
+        const classDataWithNendo = (dataFromSKT.class_data || []).map(item => ({
+          ...item,
+          nendo: nendo
+        }));
+        const goudouMeiboWithNendo = (dataFromSKT.goudouMeibo_data || []).map(item => ({
+          ...item,
+          nendo: nendo
+        }));
+        // 2. データを削除（結果を待つ）
+        await db.deleteManyDocuments('class', { nendo: nendo });
+        await db.deleteManyDocuments('goudouMeibo', { nendo: nendo });
+        await db.deleteManyDocuments('user', { });
+        // 3. 新しいコンテンツを登録（結果を待つ）
+        const insertResClass = await db.insertManyDocuments('class', classDataWithNendo);
+        const insertResGoudou = await db.insertManyDocuments('goudouMeibo', goudouMeiboWithNendo);
+        const insertResUser = await db.insertManyDocuments('user', dataFromSKT.user_data);
+        // 4. 正常終了のレスポンスを返す
+        resp.json({ success: true, message: "getfromskt_meibo result", data: 'OK' });
+      } catch (err) {
+        console.error('getfromskt_meibo エラー:', err);
+        return resp.status(500).json({ success: false, message: 'getfromskt_meibo  エラー' });
+      }
+      break;
+    }
+
     default:
     break;
   }
