@@ -259,3 +259,153 @@ export function NBNGetClsInfoFromClsStr(matrix) {
   }
   return OutputMatrix;
 }
+
+/**
+ * 出席番号で指定した生徒一人について、sktから取得した出欠情報を参照して数を数える
+ * @param {object[]} skydata 1クラス分に絞りこまれた出欠データ
+ */
+export function NBNSyukketsuCountPerStudent(bangou, sktdata, startYear, startMonth, startDay, endYear, endMonth, endDay) {
+    const skReasons = ['reason1', 'reason2', 'reason3', 'reason4' , 'reason5', 'reason6', 'reason7', 'reason8', 'reason9'],
+      skReasonStr = ['頭痛'   , '腹痛'   , '通院'   , '体調不良', '発熱'   , '感染'   , '受験'   , '不注意' , 'その他'];
+
+      // sktのskCountPerPersonと基本的に同じ実装で不要な部分だけコメントアウトしてある。
+      let totalPerKind, syutteiStr, byouketsuStr, jikoketsuStr, tikokuStr, soutaiStr, kouketsuStr,
+        retDetail = "",
+        selectBangou = function ( bangou ) {
+          return function ( target ) {
+            if (target.bangou == bangou) {
+              return true;
+            }
+          };
+        },
+        resetCounter = function (target) {
+          let i;
+          for (i = 0; i < skReasons.length; i++) {
+            target[skReasons[i]] = 0;
+          }
+        },
+        countUp = function (target,reason) {
+          target[skReasons[reason-1]]++; //targetのメンバであるreason1のうち、該当するものをカウントアップする。
+        },
+        countTotalPerKind = function (target) {
+          let i, tempSum = 0;
+          for (i = 0; i < skReasons.length; i++) {
+            tempSum += target[skReasons[i]];
+          }
+          return tempSum; //targetのメンバであるreason1,reason2・・・たちの和を返す。
+        },
+        showReason = function (target) {
+          let i, retStr = "";
+          for (i = 0; i < skReasons.length; i++) {
+            if (target[skReasons[i]] != 0) {
+              retStr += skReasonStr[i] + String(target[skReasons[i]]) + ','
+            }
+          }
+          if (retStr != "" ) { retStr = retStr.slice(0, -1); }//最後の ',' は邪魔なので削除
+          return retStr;
+        },
+        daycheck = function (y, m, d, sy, sm, sd, ey, em, ed) {
+          let targetDate = new Date(y, m - 1, d),
+            targett   = targetDate.getTime(),
+            startDate = new Date(sy, sm - 1, sd),
+            endDate   = new Date(ey, em - 1, ed);
+
+          if (startDate.getTime() <= targett && targett <= endDate.getTime()) {
+            return true;
+          } else {
+            return false;
+          }
+        },
+        cKind1 = {},
+        cKind2 = {},
+        cKind3 = {},
+        cKind4 = {},
+        cKind5 = {},
+        cKind6 = 0; // 公欠は理由を求めないので特別扱い
+
+    if ( sktdata != null && sktdata.length != 0 ) {
+
+      resetCounter(cKind1);
+      resetCounter(cKind2);
+      resetCounter(cKind3);
+      resetCounter(cKind4);
+      resetCounter(cKind5);
+      cKind6 = 0; // 公欠は理由を求めないので特別扱い
+
+      // 日毎の繰り返し
+      sktdata.forEach( function ( target ) {
+        // 対象外の日時なら飛ばす
+        if (daycheck(target.year, target.month, target.day, startYear, startMonth, startDay, endYear, endMonth, endDay)) {
+          // 欠席者等がいて
+          if ( target.member != null && target.member.length != 0 ) {
+            let p = target.member.find(selectBangou(bangou));
+            // それがこの人だったときは集計
+            if ( p != null ) {
+              if ( (p.kind & 1) == 1) {
+                countUp( cKind1, p.reason );
+              }
+              if ( (p.kind & 2) == 2 ) {
+                countUp( cKind2, p.reason );
+              }
+              if ( (p.kind & 4) == 4 ) {
+                countUp( cKind3, p.reason );
+              }
+              if ( (p.kind & 8) == 8 ) {
+                countUp( cKind4, p.reason );
+              }
+              if ( (p.kind & 16) == 16 ) {
+                countUp( cKind5, p.reason );
+              }
+              if ( (p.kind & 32) == 32 ) {
+                cKind6++;// 公欠は理由を求めないので特別扱い
+              }
+
+              // 集計ついでに詳細も追記してゆく
+              //retDetail += String(target.month) + '/'+ String(target.day) + rnObj2Htm(bangou, [p], "") + ' ';
+            }
+          }
+        }
+      });
+      // 数え終えたので、それを表示
+      /*
+      totalPerKind = countTotalPerKind(cKind1);
+      if ( totalPerKind != 0 ) {
+        syutteiStr   = String(totalPerKind) + '(' + showReason(cKind1) + ')' ;
+      }
+      totalPerKind = countTotalPerKind(cKind2);
+      if ( totalPerKind != 0 ) {
+        byouketsuStr = String(totalPerKind) + '(' + showReason(cKind2) + ')';
+      }
+      totalPerKind = countTotalPerKind(cKind3);
+      if ( totalPerKind != 0 ) {
+        jikoketsuStr = String(totalPerKind) + '(' + showReason(cKind3) + ')';
+      }
+      totalPerKind = countTotalPerKind(cKind4);
+      if ( totalPerKind != 0 ) {
+        tikokuStr    = String(totalPerKind) + '(' + showReason(cKind4) + ')';
+      }
+      totalPerKind = countTotalPerKind(cKind5);
+      if ( totalPerKind != 0 ) {
+        soutaiStr    = String(totalPerKind) + '(' + showReason(cKind5) + ')';
+      }
+      if ( cKind6 != 0 ) {
+        kouketsuStr  = String(cKind6);
+      }
+      */
+    }
+    /*
+    return { syuttei   : syutteiStr,
+             byouketsu : byouketsuStr,
+             jikoketsu : jikoketsuStr,
+             tikoku    : tikokuStr,
+             soutai    : soutaiStr,
+             kouketsu  : kouketsuStr,
+             detail    : retDetail };
+    */
+
+  return { syussekiTeishi : countTotalPerKind(cKind1),
+           ryuugaku : 0,
+           kesseki : countTotalPerKind(cKind2) + countTotalPerKind(cKind3),
+           chikoku : countTotalPerKind(cKind4),
+           soutai : countTotalPerKind(cKind5)};
+}

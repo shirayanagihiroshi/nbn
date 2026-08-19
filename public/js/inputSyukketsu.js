@@ -1,6 +1,7 @@
 import { NBNZenkaku2hankaku,
          NBNParseExcelData,
-         NBNrenderTable } from './NBNHelpers.js';
+         NBNrenderTable,
+         NBNSyukketsuCountPerStudent } from './NBNHelpers.js';
 
 export class InputSyukketsuView extends HTMLElement {
   constructor() {
@@ -177,6 +178,8 @@ export class InputSyukketsuView extends HTMLElement {
       if (result.success && result.classInfo) {
         this.myClassInfo = result.classInfo; // { gakunen: 4, cls: 1 }
         this.syukketsuDataList = result.students || [];
+        //念のため出席番号でソート(小->大)
+        this.syukketsuDataList.sort( (studentA, studentB) => studentA.bangou - studentB.bangou);
 
         const gakunen = this.myClassInfo.gakunen;
         const cls = this.myClassInfo.cls;
@@ -239,33 +242,56 @@ export class InputSyukketsuView extends HTMLElement {
 
     // SKTからデータ取得ボタン
     this.shadowRoot.getElementById('getfromskt-btn').addEventListener('click', async () => {
-      const dialog = this._findConfirmDialog();
-      if (dialog) {
-        const action = await dialog.show({
-          title: 'データ取得前の確認',
-          message: 'SKTからデータを取得し、現在表示されている入力枠に上書きします。\nよろしいですか？',
-          buttons: [{ label: 'OK', onClickFunc: 'ok' }, { label: 'キャンセル', onClickFunc: 'cancel' }]
-        });
-        if (action !== 'ok') return;
-      }
+      const gakunen = this.myClassInfo.gakunen;
+      const periodConfig = this.allowedPeriods?.[gakunen] || { zenki: false, kouki: false };
 
-      try {
-        // 保存してあるuserIdを取り出す(userIdはここでのみ使用。SKTはトークンからのID引当てに未対応のため)
-        const userid = sessionStorage.getItem('userid');
-
-        const res = await fetch('/api/fetch/getfromskt?userid=' + userid);
-
-        const resData = await res.json();
-        if (resData.success) {
-          /* データ更新処理
-             これから実装する
-          */
-        } else {
-          throw new Error(resData.message || 'SKTからのデータ取得に失敗しました。');
+      if (periodConfig.zenki || periodConfig.kouki) {
+        const dialog = this._findConfirmDialog();
+        if (dialog) {
+          const action = await dialog.show({
+            title: 'データ取得前の確認',
+            message: 'SKTからデータを取得し、現在表示されている入力枠に上書きします。\nよろしいですか？',
+            buttons: [{ label: 'OK', onClickFunc: 'ok' }, { label: 'キャンセル', onClickFunc: 'cancel' }]
+          });
+          if (action !== 'ok') return;
         }
 
-      } catch (err) {
-        console.error("SKTからのデータ取得に失敗しました。:", err);
+        try {
+          // 保存してあるuserIdを取り出す(userIdはSKTのAPI使用時のみ使用。SKTはトークンからのID引当てに未対応のため)
+          const userid = sessionStorage.getItem('userid');
+
+          const res = await fetch('/api/fetch/getfromskt?userid=' + userid);
+
+          const resData = await res.json();
+          if (resData.success) {
+            // データ更新処理
+            this.syukketsuDataList.forEach(s => {
+              if (periodConfig.zenki) {
+                const obj = NBNSyukketsuCountPerStudent(s.bangou, resData.data, this.targetNendo, 4, 1, this.targetNendo, 9, 30);
+                s.zenki.syussekiTeishi = obj.syussekiTeishi;
+                s.zenki.ryuugaku       = obj.ryuugaku;
+                s.zenki.kesseki        = obj.kesseki;
+                s.zenki.chikoku        = obj.chikoku;
+                s.zenki.soutai         = obj.soutai;
+              }
+              if (periodConfig.kouki) {
+                const obj = NBNSyukketsuCountPerStudent(s.bangou, res.data, this.targetNendo, 10, 1, this.targetNendo + 1, 3, 31);
+                s.kouki.syussekiTeishi = obj.syussekiTeishi;
+                s.kouki.ryuugaku       = obj.ryuugaku;
+                s.kouki.kesseki        = obj.kesseki;
+                s.kouki.chikoku        = obj.chikoku;
+                s.kouki.soutai         = obj.soutai;
+              }
+            });
+            // テーブルの描画
+            this._renderSyukketsuTable();
+
+          } else {
+            throw new Error(resData.message || 'SKTからのデータ取得に失敗しました。');
+          }
+        } catch (err) {
+          console.error("SKTからのデータ取得に失敗しました。:", err);
+        }
       }
     });
 
