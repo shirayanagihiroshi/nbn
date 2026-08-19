@@ -689,7 +689,7 @@ class inputSeisekiView extends HTMLElement {
       const li = document.createElement('li');
       li.className = 'kamoku-item';
 
-      // 【修正箇所】kamokuId だけでなく、学年・クラス・合同名簿IDまで含めて厳密に比較する
+      // kamokuId だけでなく、学年・クラス・合同名簿IDまで含めて厳密に比較する
       if (this._isSameKamoku(this.currentKamokuData, kamoku)) {
         li.classList.add('selected');
       }
@@ -711,21 +711,31 @@ class inputSeisekiView extends HTMLElement {
   }
 
   // =========================================================
-  // 【追加】2つの科目データが「同一の授業か」を厳密に判定するヘルパー関数
+  // 2つの科目データが「同一の授業か」を厳密に判定するヘルパー関数
   // =========================================================
   _isSameKamoku(a, b) {
     if (!a || !b) return false;
 
-    // 1. 合同名簿（kongoumeibo）が設定されている場合：合同名簿IDで判定
+    // 科目IDがそもそも違っていれば、別の科目なので即座に false
+    if (a.kamokuId !== b.kamokuId) {
+      return false;
+    }
+
     const aKongou = a.meiboInfo?.kongoumeibo;
     const bKongou = b.meiboInfo?.kongoumeibo;
+
+    // 片方が合同名簿、片方がクラス単位なら同一でない
+    if ((aKongou == null && bKongou != null) || (aKongou != null && bKongou == null)) {
+      return false;
+    }
+
+    // 合同名簿（kongoumeibo）が設定されている場合：合同名簿IDで判定
     if (aKongou != null && bKongou != null) {
       return Number(aKongou) === Number(bKongou);
     }
 
-    // 2. 通常クラスの場合：科目ID ＋ 学年 ＋ クラス の3つで完全一致判定
+    // 通常クラスの場合：学年 ＋ クラス の2つで一致判定
     return (
-      a.kamokuId === b.kamokuId &&
       a.meiboInfo?.gakunen === b.meiboInfo?.gakunen &&
       a.meiboInfo?.cls === b.meiboInfo?.cls
     );
