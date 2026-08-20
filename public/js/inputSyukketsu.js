@@ -13,6 +13,7 @@ export class InputSyukketsuView extends HTMLElement {
     this.myClassInfo = null;       // 担任クラス情報（{ gakunen: 4, cls: 1 } など）
     this.allowedPeriods = {};      // 学年ごとの入力許可期間 { "4": { zenki: true, kouki: false }, ... }
     this.jugyouNissuConfig = {};   // 学年ごとの授業日数 { "4": { zenki: 100, kouki: 105 }, ... }
+    this.importSetting = null;     // SKTからのデータのいつからいつまでを集計対象にするか
     this.syukketsuDataList = [];   // 生徒ごとの出欠データ一覧
     this.headerNum = 2;            // ヘッダー行数（タイトル行 + 見出し行）
   }
@@ -170,6 +171,7 @@ export class InputSyukketsuView extends HTMLElement {
       this.targetNendo = config.nendo;
       this.allowedPeriods = config.syukketsuPeriods;    // 例: { "4": { zenki: true, kouki: false } }
       this.jugyouNissuConfig = config.jugyouNissu;      // 例: { "4": { zenki: 100, kouki: 105 } }
+      this.importSetting = config.importSetting;
 
       // 2. ログイン教員の担任クラス情報と生徒の出欠データを取得
       const dataRes = await fetch(`/api/fetch/syukketsu-sheet?token=${encodeURIComponent(token)}&nendo=${this.targetNendo}`);
@@ -267,7 +269,13 @@ export class InputSyukketsuView extends HTMLElement {
             // データ更新処理
             this.syukketsuDataList.forEach(s => {
               if (periodConfig.zenki) {
-                const obj = NBNSyukketsuCountPerStudent(s.bangou, resData.data, this.targetNendo, 4, 1, this.targetNendo, 9, 30);
+                const obj = NBNSyukketsuCountPerStudent(s.bangou, resData.data,
+                                                        this.importSetting.zenkiStartYear,
+                                                        this.importSetting.zenkiStartMonth,
+                                                        this.importSetting.zenkiStartDay,
+                                                        this.importSetting.zenkiEndYear,
+                                                        this.importSetting.zenkiEndMonth,
+                                                        this.importSetting.zenkiEndDay );
                 s.zenki.syussekiTeishi = obj.syussekiTeishi;
                 s.zenki.ryuugaku       = obj.ryuugaku;
                 s.zenki.kesseki        = obj.kesseki;
@@ -275,7 +283,13 @@ export class InputSyukketsuView extends HTMLElement {
                 s.zenki.soutai         = obj.soutai;
               }
               if (periodConfig.kouki) {
-                const obj = NBNSyukketsuCountPerStudent(s.bangou, res.data, this.targetNendo, 10, 1, this.targetNendo + 1, 3, 31);
+                const obj = NBNSyukketsuCountPerStudent(s.bangou, res.data,
+                                                        this.importSetting.koukiStartYear,
+                                                        this.importSetting.koukiStartMonth,
+                                                        this.importSetting.koukiStartDay,
+                                                        this.importSetting.koukiEndYear,
+                                                        this.importSetting.koukiEndMonth,
+                                                        this.importSetting.koukiEndDay );
                 s.kouki.syussekiTeishi = obj.syussekiTeishi;
                 s.kouki.ryuugaku       = obj.ryuugaku;
                 s.kouki.kesseki        = obj.kesseki;

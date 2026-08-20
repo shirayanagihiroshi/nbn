@@ -47,7 +47,7 @@ router.post('/:resource', async (req, response) => {
 
     case 'ks_manage': {
       try {
-        const { nendo, periods, syukketsuPeriods, jugyouNissu } = req.body;
+        const { nendo, periods, syukketsuPeriods, jugyouNissu, importSetting } = req.body;
 
         // コレクション内の唯一のドキュメントを特定するための固定キー
         const queryObj = { systemConfigKey: "MASTER_CONFIG" };
@@ -60,6 +60,7 @@ router.post('/:resource', async (req, response) => {
             periods,
             syukketsuPeriods,
             jugyouNissu,
+            importSetting,
             updatedAt: new Date()
           }
         };

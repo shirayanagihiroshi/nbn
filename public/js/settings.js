@@ -23,6 +23,13 @@ class SettingsView extends HTMLElement {
       <h2>出欠入力の可/不可 0:入力不可 1:入力可</h2>
       <table id="canInputsSyukketsuTable" border="1"></table>
 
+      <h2>期間の設定</h2>
+      本項目はSKTからのデータの読み込みで、いつからいつまでの欠席等を集計対象にするのかに使う。
+      高3が7月くらいに（前期が終わる前に）仮の入力をする際には、前期の期間を4/1～〆の日とする。
+      前期を終えてからの入力の際には、前期の期間を4/1～9/30とすればよい。後期は常に10/1～翌年3/31でよいはず。
+      <p>前期：4月1日～<input type="text" size="2" id="zenkiEndMonth">月<input type="text" size="2" id="zenkiEndDay">日</p>
+      <p>後期：10月1日～翌年3月31日</p>
+
       <h2>授業日数 日数を数値で入力</h2>
       <table id="jugyouNissuTable" border="1"></table>
 
@@ -112,6 +119,12 @@ class SettingsView extends HTMLElement {
       });
       nissuTable.innerHTML = nissuHtml;
 
+      // 期間の設定
+      const importSettingZenkiEndMonth = this.shadowRoot.getElementById('zenkiEndMonth');
+      importSettingZenkiEndMonth.value = data?.importSetting?.zenkiEndMonth ?? '';
+      const importSettingZenkiEndDay = this.shadowRoot.getElementById('zenkiEndDay');
+      importSettingZenkiEndDay.value = data?.importSetting?.zenkiEndDay ?? '';
+
     } catch (err) {
       console.error('設定読み込みエラー:', err);
       alert('設定の読み込み中に通信エラーが発生しました。');
@@ -133,11 +146,23 @@ class SettingsView extends HTMLElement {
       return;
     }
 
+    //sktからのインポートの設定
+    const importSettingZenkiEndMonthTemp = this.shadowRoot.getElementById('zenkiEndMonth').value;
+    const importSettingZenkiEndMonth = Number(NBNZenkaku2hankaku(importSettingZenkiEndMonthTemp.trim()));
+    const importSettingZenkiEndDayTemp = this.shadowRoot.getElementById('zenkiEndDay').value;
+    const importSettingZenkiEndDay = Number(NBNZenkaku2hankaku(importSettingZenkiEndDayTemp.trim()));
+
+    if (!importSettingZenkiEndMonth || isNaN(importSettingZenkiEndMonth) || !importSettingZenkiEndDay || isNaN(importSettingZenkiEndDay)) {
+      alert('月、日を正しい数値で入力してください。');
+      return;
+    }
+
     const payload = {
       nendo: cleanNendo,
       periods: {},
       syukketsuPeriods: {},
-      jugyouNissu: {}
+      jugyouNissu: {},
+      importSetting: {}
     };
 
     // 各テーブルの入力文字列を半角変換して回収するヘルパー関数
@@ -171,6 +196,18 @@ class SettingsView extends HTMLElement {
     payload.periods = collectData('canInputsSeisekiTable', true);
     payload.syukketsuPeriods = collectData('canInputsSyukketsuTable', true);
     payload.jugyouNissu = collectData('jugyouNissuTable', false);
+    payload.importSetting = { zenkiStartYear  : cleanNendo,
+                              zenkiStartMonth : 4,
+                              zenkiStartDay   : 1,
+                              zenkiEndYear    : cleanNendo,
+                              zenkiEndMonth   : importSettingZenkiEndMonth,
+                              zenkiEndDay     : importSettingZenkiEndDay,
+                              koukiStartYear  : cleanNendo,
+                              koukiStartMonth : 10,
+                              koukiStartDay   : 1,
+                              koukiEndYear    : cleanNendo+1,
+                              koukiEndMonth   : 3,
+                              koukiEndDay     : 31 };
 
     try {
       const res = await fetch('/api/store/ks_manage', {
