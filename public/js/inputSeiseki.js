@@ -139,6 +139,8 @@ class inputSeisekiView extends HTMLElement {
         #register-btn:hover { background-color: #45a049; }
         #paste-btn { background-color: #2196F3; color: white; border: none; }
         #paste-btn:hover { background-color: #0b7dda; }
+        #getfromskt-btn { background-color: #ff8c00; color: white; border: none; }
+        #getfromskt-btn:hover { background-color: #d2691e; }
       </style>
       <div class="container">
         <div class="sidebar">
@@ -151,6 +153,7 @@ class inputSeisekiView extends HTMLElement {
           <div class="info-bar" id="infoBar">データを読み込み中...</div>
           <div class="btn-container">
             <button id="paste-btn">Excelからペースト</button>
+            <!--<button id="getfromskt-btn">SKTから欠課を取得</button>-->
             <button id="register-btn">登録（サーバーへ保存）</button>
           </div>
           <table class="seiseki" id="scoreTable"></table>
@@ -160,7 +163,8 @@ class inputSeisekiView extends HTMLElement {
 
     // 内部で管理する状態
     this.targetNendo = null;          // 管理コレクションから取得する年度
-    this.allowedPeriod = null;        // 管理コレクションから取得する期間 ("zenki", "kouki", "tsunen")
+    //this.allowedPeriods = null;       // 管理コレクションから取得する期間 ("zenki", "kouki", "tsunen")
+    //this.importSetting = null;        // SKTからのデータのいつからいつまでを集計対象にするか
     this.myKamokuList = [];           // 担当する全科目のリスト
     this.currentKamokuData = null;    // 現在画面に表示している講座・生徒の生データ
     this.scoreTableHeaherNum = 2;     // 成績入力の表におけるヘッダの行数
@@ -207,6 +211,90 @@ class inputSeisekiView extends HTMLElement {
       }
     });
 
+    // SKTからデータ取得ボタン
+/*
+    this.shadowRoot.getElementById('getfromskt-btn').addEventListener('click', async () => {
+      const promptDialog = this._findPromptDialog();
+      // 入力結果を await で直接受け取る
+      const resultNumber = await promptDialog.show({
+        title: '授業のIDの入力',
+        message: '欠課を取り込む対象の授業のIDを入力してください',
+        defaultValue: 1
+      });
+      if (resultNumber !== null) {
+        console.log('入力された数値:', resultNumber);
+        // 保存などの処理を実行
+      } else {
+        console.log('キャンセルされました');
+      }
+
+      const gakunen = this.myClassInfo.gakunen;
+      const periodConfig = this.allowedPeriods?.[gakunen] || { zenki: false, kouki: false };
+
+      if (periodConfig.zenki || periodConfig.kouki) {
+//        const dialog = this._findConfirmDialog();
+        if (dialog) {
+          const action = await dialog.show({
+            title: 'データ取得前の確認',
+            message: 'SKTからデータを取得し、現在表示されている入力枠に上書きします。\nよろしいですか？',
+            buttons: [{ label: 'OK', onClickFunc: 'ok' }, { label: 'キャンセル', onClickFunc: 'cancel' }]
+          });
+          if (action !== 'ok') return;
+        }
+
+        try {
+          // 保存してあるuserIdを取り出す(userIdはSKTのAPI使用時のみ使用。SKTはトークンからのID引当てに未対応のため)
+          const userid = sessionStorage.getItem('userid');
+
+          const res = await fetch('/api/fetch/getfromskt?userid=' + userid);
+
+          const resData = await res.json();
+          if (resData.success) {
+            // データ更新処理
+            this.syukketsuDataList.forEach(s => {
+              if (periodConfig.zenki) {
+                const obj = NBNSyukketsuCountPerStudent(s.bangou, resData.data,
+                                                        this.importSetting.zenkiStartYear,
+                                                        this.importSetting.zenkiStartMonth,
+                                                        this.importSetting.zenkiStartDay,
+                                                        this.importSetting.zenkiEndYear,
+                                                        this.importSetting.zenkiEndMonth,
+                                                        this.importSetting.zenkiEndDay );
+                s.zenki.syussekiTeishi = obj.syussekiTeishi;
+                s.zenki.ryuugaku       = obj.ryuugaku;
+                s.zenki.kesseki        = obj.kesseki;
+                s.zenki.chikoku        = obj.chikoku;
+                s.zenki.soutai         = obj.soutai;
+              }
+              if (periodConfig.kouki) {
+                const obj = NBNSyukketsuCountPerStudent(s.bangou, res.data,
+                                                        this.importSetting.koukiStartYear,
+                                                        this.importSetting.koukiStartMonth,
+                                                        this.importSetting.koukiStartDay,
+                                                        this.importSetting.koukiEndYear,
+                                                        this.importSetting.koukiEndMonth,
+                                                        this.importSetting.koukiEndDay );
+                s.kouki.syussekiTeishi = obj.syussekiTeishi;
+                s.kouki.ryuugaku       = obj.ryuugaku;
+                s.kouki.kesseki        = obj.kesseki;
+                s.kouki.chikoku        = obj.chikoku;
+                s.kouki.soutai         = obj.soutai;
+              }
+            });
+            // テーブルの描画
+            this._renderSyukketsuTable();
+
+          } else {
+            throw new Error(resData.message || 'SKTからのデータ取得に失敗しました。');
+          }
+        } catch (err) {
+          console.error("SKTからのデータ取得に失敗しました。:", err);
+        }
+      }
+    });
+*/
+    
+    
     // 2. 登録ボタン押下時の処理
     let registerbtn = this.shadowRoot.getElementById('register-btn');
     registerbtn.addEventListener('click', async () => {
@@ -271,6 +359,7 @@ class inputSeisekiView extends HTMLElement {
       const config = await configRes.json();
       this.targetNendo = config.nendo;
       this.allowedPeriods = config.periods;
+      //this.importSetting = config.importSetting;
 
       // 「教員IDに紐づく生徒・成績一覧」をGET
       const dataRes = await fetch(`/api/fetch/input-sheet?token=${encodeURIComponent(token)}&nendo=${this.targetNendo}`);
@@ -495,7 +584,30 @@ class inputSeisekiView extends HTMLElement {
     }
     return null;
   }
-  
+
+  /**
+   * どんなに深い Shadow DOM の中にいても prompt-dialog を探し出すヘルパーメソッド
+   */
+  /*
+  _findPromptDialog() {
+    // 1. 直近の ShadowRoot または document を探す
+    let root = this.getRootNode();
+    while (root) {
+      // 今の階層で confirm-dialog を探す
+      const dialog = root.querySelector('prompt-dialog');
+      if (dialog) return dialog;
+
+      // もし見つからず、まだ上に親コンポーネント（host）があるなら、さらに上のルートへ登る
+      if (root.host) {
+        root = root.host.getRootNode();
+      } else {
+        break; // 一番外側の document まで到達したら終了
+      }
+    }
+    return null;
+  }
+  */
+
   /**
    * データチェック関数
    */

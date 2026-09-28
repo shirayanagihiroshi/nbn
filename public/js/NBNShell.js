@@ -3,6 +3,7 @@ import './TitleLine.js';
 import './MainContainer.js';
 import './MainMenu.js';
 import './ConfirmDialog.js';
+//import './PromptDialog.js';
 import './LoginDialog.js';
 
 
@@ -45,6 +46,7 @@ class NBNShell extends HTMLElement {
       <main-menu></main-menu>
       <login-dialog></login-dialog>
       <confirm-dialog></confirm-dialog>
+      <!--<prompt-dialog></prompt-dialog>-->
     `;
 
     // 状態遷移の入口はここに統合された
