@@ -36,7 +36,18 @@ router.post('/:resource', async (req, response) => {
 
     case 'ks_master':
       try {
-        await db.deleteManyDocuments('ks_master', { nendo: req.body.nendo });
+        const TempKamokuID = req.body.contents[0].kamokuId;
+        const TempGakunen = TempKamokuID.slice(0, 2);
+// 学年毎にマスターを作っているので、学年ごとのマスターを消して入れなおしたい。
+// しかし、合同名簿を使っている授業は学年やクラスを持っていないので、IDで見分けるしかない。
+// 高3:"h3"からはじまる
+// 高2:"h2"からはじまる
+// 高1:"h1"からはじまる
+// 正規表現で、上を判定して消す。
+        await db.deleteManyDocuments('ks_master', {
+          nendo: req.body.nendo,
+          kamokuId: { $regex: new RegExp('^' + TempGakunen, 'i') }
+        });
         const insertRes = await db.insertManyDocuments('ks_master', req.body.contents);
         response.json({ success: true, message: "マスターを更新しました", data: insertRes });
       } catch (error) {
